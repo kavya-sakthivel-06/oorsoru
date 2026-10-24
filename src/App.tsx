@@ -19,6 +19,13 @@ import {
   Star,
   Truck,
   X,
+  Minus,
+  Plus,
+  Package,
+  MapPin,
+  CreditCard,
+  CheckCircle2,
+  Trash2,
 } from "lucide-react";
 
 type Product = {
@@ -31,6 +38,14 @@ type Product = {
   description: string;
   label?: string;
   rating: string;
+  netWeight: string;
+  ingredients: string[];
+  allergens: string;
+  shelfLife: string;
+  storage: string;
+  preparationTime: string;
+  availability: "Ready to dispatch" | "Made to order" | "Limited batch";
+  dispatchEstimate: string;
 };
 
 const products: Product[] = [
@@ -45,6 +60,14 @@ const products: Product[] = [
     description: "A bold, tangy favourite for everyday meals.",
     label: "Local favourite",
     rating: "4.8",
+    netWeight: "300 g",
+    ingredients: ["Raw mango", "Mustard", "Red chilli", "Sesame oil", "Salt"],
+    allergens: "Contains mustard. Prepared in a kitchen that may handle peanuts.",
+    shelfLife: "6 months from packing (demo information)",
+    storage: "Store in a cool, dry place. Use a clean, dry spoon.",
+    preparationTime: "Ready to eat",
+    availability: "Ready to dispatch",
+    dispatchEstimate: "Usually dispatched in 1–2 working days",
   },
   {
     id: 2,
@@ -57,6 +80,14 @@ const products: Product[] = [
     description: "Aromatic spices for your morning idlis.",
     label: "Small batch",
     rating: "4.9",
+    netWeight: "200 g",
+    ingredients: ["Roasted lentils", "Red chilli", "Sesame", "Curry leaves", "Salt"],
+    allergens: "Contains sesame. Check the maker’s label for cross-contact details.",
+    shelfLife: "4 months from packing (demo information)",
+    storage: "Keep airtight in a cool, dry place.",
+    preparationTime: "Ready to serve; mix with oil or ghee",
+    availability: "Made to order",
+    dispatchEstimate: "Prepared in small batches; dispatch in 3–5 working days",
   },
   {
     id: 3,
@@ -68,6 +99,14 @@ const products: Product[] = [
       "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=900&q=85",
     description: "A crunchy snack for tea-time cravings.",
     rating: "4.7",
+    netWeight: "250 g",
+    ingredients: ["Rice flour", "Urad dal flour", "Butter", "Cumin", "Salt"],
+    allergens: "Contains dairy. Check the maker’s label for cross-contact details.",
+    shelfLife: "30 days from packing (demo information)",
+    storage: "Keep sealed in an airtight container away from moisture.",
+    preparationTime: "Ready to eat",
+    availability: "Limited batch",
+    dispatchEstimate: "Next small-batch dispatch in 2–4 working days",
   },
   {
     id: 4,
@@ -80,6 +119,14 @@ const products: Product[] = [
     description: "A fragrant blend made for traditional cooking.",
     label: "Maker's pick",
     rating: "4.8",
+    netWeight: "150 g",
+    ingredients: ["Coriander", "Cumin", "Black pepper", "Red chilli", "Fenugreek"],
+    allergens: "May contain traces of sesame and peanuts.",
+    shelfLife: "5 months from packing (demo information)",
+    storage: "Store airtight, away from direct sunlight.",
+    preparationTime: "Ready to use in cooking",
+    availability: "Made to order",
+    dispatchEstimate: "Prepared after order; dispatch in 3–5 working days",
   },
   {
     id: 5,
@@ -91,6 +138,14 @@ const products: Product[] = [
       "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85",
     description: "Sweet little bites for sharing with family.",
     rating: "4.6",
+    netWeight: "200 g",
+    ingredients: ["Gram flour", "Sugar", "Ghee", "Cardamom", "Cashew"],
+    allergens: "Contains dairy and cashew nuts.",
+    shelfLife: "21 days from packing (demo information)",
+    storage: "Store in a cool, dry place and reseal after opening.",
+    preparationTime: "Ready to eat",
+    availability: "Limited batch",
+    dispatchEstimate: "Small-batch dispatch in 2–4 working days",
   },
   {
     id: 6,
@@ -102,6 +157,14 @@ const products: Product[] = [
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=85",
     description: "A crunchy companion for your evening chai.",
     rating: "4.7",
+    netWeight: "250 g",
+    ingredients: ["Flattened rice", "Peanuts", "Roasted gram", "Curry leaves", "Spices"],
+    allergens: "Contains peanuts. Check label for other allergens.",
+    shelfLife: "45 days from packing (demo information)",
+    storage: "Keep sealed in a cool, dry place.",
+    preparationTime: "Ready to eat",
+    availability: "Ready to dispatch",
+    dispatchEstimate: "Usually dispatched in 1–2 working days",
   },
 ];
 
@@ -176,6 +239,53 @@ useEffect(() => {
   localStorage.setItem("oorsoru-cart", JSON.stringify(cart));
 }, [cart]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [orderConfirmation, setOrderConfirmation] = useState<{
+    orderId: string;
+    items: { name: string; quantity: number; price: number }[];
+    subtotal: number;
+    delivery: number;
+    total: number;
+    customerName: string;
+    address: string;
+    paymentMethod: string;
+    createdAt: string;
+  } | null>(null);
+  const [deliveryForm, setDeliveryForm] = useState({
+    fullName: "",
+    phone: "",
+    addressLine: "",
+    city: "",
+    pincode: "",
+    notes: "",
+  });
+  const [paymentMethod, setPaymentMethod] = useState("Cash on delivery");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [detailQuantity, setDetailQuantity] = useState(1);
+  const [detailImageFailed, setDetailImageFailed] = useState(false);
+
+  function openProductDetails(product: Product) {
+    setSelectedProduct(product);
+    setDetailQuantity(1);
+    setDetailImageFailed(false);
+  }
+
+  function closeProductDetails() {
+    setSelectedProduct(null);
+    setDetailQuantity(1);
+    setDetailImageFailed(false);
+  }
+
+  function addSelectedProductToCart() {
+    if (!selectedProduct) return;
+    setCart((current) => ({
+      ...current,
+      [selectedProduct.id]: (current[selectedProduct.id] ?? 0) + detailQuantity,
+    }));
+    closeProductDetails();
+    setCartOpen(true);
+  }
 
   const animationDuration = reduceMotion ? 0 : 0.55;
 
@@ -205,6 +315,58 @@ useEffect(() => {
     (total, product) => total + product.price * (cart[product.id] ?? 0),
     0,
   );
+  const deliveryCharge = cartTotal === 0 || cartTotal >= 799 ? 0 : 49;
+  const orderTotal = cartTotal + deliveryCharge;
+
+  function placeDemoOrder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCheckoutError("");
+
+    const phoneDigits = deliveryForm.phone.replace(/\D/g, "");
+    if (phoneDigits.length !== 10) {
+      setCheckoutError("Enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!/^\d{6}$/.test(deliveryForm.pincode.trim())) {
+      setCheckoutError("Enter a valid 6-digit PIN code.");
+      return;
+    }
+    if (cartTotal <= 0) {
+      setCheckoutError("Your bag is empty. Add a product before checking out.");
+      return;
+    }
+
+    const orderId = `ORS-${Date.now().toString().slice(-8)}`;
+    const order = {
+      orderId,
+      items: products
+        .filter((product) => (cart[product.id] ?? 0) > 0)
+        .map((product) => ({
+          name: product.name,
+          quantity: cart[product.id],
+          price: product.price,
+        })),
+      subtotal: cartTotal,
+      delivery: deliveryCharge,
+      total: orderTotal,
+      customerName: deliveryForm.fullName.trim(),
+      address: `${deliveryForm.addressLine.trim()}, ${deliveryForm.city.trim()} - ${deliveryForm.pincode.trim()}`,
+      paymentMethod,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const previousOrders = JSON.parse(localStorage.getItem("oorsoru-orders") || "[]");
+      localStorage.setItem("oorsoru-orders", JSON.stringify([order, ...previousOrders]));
+    } catch {
+      localStorage.setItem("oorsoru-orders", JSON.stringify([order]));
+    }
+
+    setOrderConfirmation(order);
+    setCart({});
+    setCheckoutOpen(false);
+    setCartOpen(false);
+  }
 
   function addToCart(productId: number) {
     setCart((current) => ({
@@ -700,7 +862,17 @@ useEffect(() => {
                     duration: animationDuration,
                     delay: reduceMotion ? 0 : (index % 3) * 0.06,
                   }}
-                  className="group overflow-hidden rounded-2xl border border-[#294B38]/10 bg-[#F8F3E9]"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View details for ${product.name}`}
+                  onClick={() => openProductDetails(product)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openProductDetails(product);
+                    }
+                  }}
+                  className="group cursor-pointer overflow-hidden rounded-2xl border border-[#294B38]/10 bg-[#F8F3E9] outline-none transition hover:border-[#B9573C]/50 focus-visible:ring-2 focus-visible:ring-[#B9573C]"
                 >
                   <div className="relative overflow-hidden">
                     <img
@@ -724,7 +896,10 @@ useEffect(() => {
                           : `Add ${product.name} to favourites`
                       }
                       aria-pressed={favorites.includes(product.id)}
-                      onClick={() => toggleFavorite(product.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleFavorite(product.id);
+                      }}
                       className="absolute right-4 top-4 rounded-full bg-white/95 p-2.5 text-[#294B38] shadow-sm transition hover:text-[#B9573C]"
                     >
                       <Heart
@@ -761,6 +936,9 @@ useEffect(() => {
                     <p className="mt-3 text-sm leading-6 text-[#746D60]">
                       {product.description}
                     </p>
+                    <p className="mt-2 text-xs font-medium text-[#B9573C]">
+                      View product details <span aria-hidden="true">↗</span>
+                    </p>
 
                     <div className="mt-5 flex items-center justify-between border-t border-[#294B38]/10 pt-4">
                       <span className="flex items-center gap-1.5 text-xs text-[#746D60]">
@@ -774,7 +952,10 @@ useEffect(() => {
 
                       <button
                         type="button"
-                        onClick={() => addToCart(product.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          addToCart(product.id);
+                        }}
                         className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-4 py-2.5 text-xs font-medium text-white transition hover:bg-[#203B2C]"
                       >
                         {cart[product.id] ? (
@@ -958,6 +1139,168 @@ useEffect(() => {
         </div>
       </footer>
 
+      {/* Product details dialog */}
+      {selectedProduct && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-[#17251B]/55 p-0 backdrop-blur-sm sm:items-center sm:p-5"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeProductDetails();
+          }}
+        >
+          <motion.section
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 18, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: animationDuration }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-detail-title"
+            className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl bg-[#F8F3E9] shadow-2xl sm:rounded-3xl"
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#294B38]/10 bg-[#F8F3E9]/95 px-5 py-4 backdrop-blur sm:px-7">
+              <button
+                type="button"
+                onClick={closeProductDetails}
+                className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#294B38] transition hover:bg-[#294B38]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#B9573C]"
+              >
+                <ArrowRight size={16} className="rotate-180" />
+                Back to Products
+              </button>
+              <button
+                type="button"
+                aria-label="Close product details"
+                onClick={closeProductDetails}
+                className="rounded-full p-2 text-[#294B38] transition hover:bg-[#294B38]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#B9573C]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2">
+              <div className="p-5 sm:p-7">
+                <div className="relative flex min-h-64 items-center justify-center overflow-hidden rounded-2xl bg-[#E7C98E]/30 sm:min-h-[420px]">
+                  {!detailImageFailed ? (
+                    <img
+                      src={selectedProduct.image}
+                      alt={selectedProduct.name}
+                      onError={() => setDetailImageFailed(true)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 p-8 text-center text-[#294B38]">
+                      <Package size={42} strokeWidth={1.3} />
+                      <p className="font-serif text-xl">{selectedProduct.name}</p>
+                      <p className="text-sm text-[#746D60]">Product image is currently unavailable.</p>
+                    </div>
+                  )}
+                  <span className="absolute left-4 top-4 rounded-full bg-[#F8F3E9]/95 px-3 py-1.5 text-xs font-semibold text-[#294B38]">
+                    {selectedProduct.category}
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${
+                    selectedProduct.availability === "Ready to dispatch"
+                      ? "bg-[#294B38]/10 text-[#294B38]"
+                      : selectedProduct.availability === "Limited batch"
+                        ? "bg-[#E7C98E]/40 text-[#6D4C12]"
+                        : "bg-[#B9573C]/10 text-[#B9573C]"
+                  }`}>
+                    <span className="h-2 w-2 rounded-full bg-current" />
+                    {selectedProduct.availability}
+                  </span>
+                  <span className="rounded-full border border-[#294B38]/15 px-3 py-2 text-xs text-[#746D60]">
+                    {selectedProduct.netWeight}
+                  </span>
+                </div>
+              </div>
+
+              <div className="px-5 pb-7 sm:px-7 sm:pb-8">
+                <p className="mt-2 text-xs font-semibold tracking-[0.18em] text-[#B9573C]">FROM {selectedProduct.maker.toUpperCase()}</p>
+                <h2 id="product-detail-title" className="mt-3 font-serif text-3xl leading-tight text-[#294B38] sm:text-4xl">
+                  {selectedProduct.name}
+                </h2>
+                <div className="mt-4 flex items-center justify-between gap-4">
+                  <p className="font-serif text-3xl font-semibold text-[#294B38]">₹{selectedProduct.price}</p>
+                  <span className="flex items-center gap-1.5 text-sm text-[#746D60]">
+                    <Star size={15} className="fill-[#D5A84C] text-[#D5A84C]" />
+                    {selectedProduct.rating} <span className="text-xs">demo rating</span>
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-7 text-[#746D60]">{selectedProduct.description}</p>
+
+                <div className="mt-5 rounded-2xl border border-[#294B38]/10 bg-white/65 p-4">
+                  <div className="flex items-start gap-3">
+                    <Clock3 size={18} className="mt-0.5 shrink-0 text-[#B9573C]" />
+                    <div>
+                      <p className="text-sm font-semibold text-[#294B38]">{selectedProduct.dispatchEstimate}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#746D60]">
+                        Dispatch estimate is illustrative for this college demo and may vary by maker and order volume.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#294B38]">Ingredients</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#746D60]">{selectedProduct.ingredients.join(", ")}.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#294B38]">Allergen information</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#746D60]">{selectedProduct.allergens}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#294B38]">Shelf life</h3>
+                      <p className="mt-1 text-sm leading-6 text-[#746D60]">{selectedProduct.shelfLife}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-[#294B38]">Preparation</h3>
+                      <p className="mt-1 text-sm leading-6 text-[#746D60]">{selectedProduct.preparationTime}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#294B38]">Storage instructions</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#746D60]">{selectedProduct.storage}</p>
+                  </div>
+                </div>
+
+                <div className="mt-7 flex flex-wrap items-center gap-4 border-t border-[#294B38]/10 pt-5">
+                  <div className="inline-flex items-center gap-4 rounded-full border border-[#294B38]/20 px-3 py-2">
+                    <button
+                      type="button"
+                      aria-label="Decrease quantity"
+                      disabled={detailQuantity <= 1}
+                      onClick={() => setDetailQuantity((quantity) => Math.max(1, quantity - 1))}
+                      className="rounded-full p-1 text-[#294B38] hover:bg-[#294B38]/10 disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span aria-live="polite" className="min-w-4 text-center text-sm font-semibold">{detailQuantity}</span>
+                    <button
+                      type="button"
+                      aria-label="Increase quantity"
+                      onClick={() => setDetailQuantity((quantity) => quantity + 1)}
+                      className="rounded-full p-1 text-[#294B38] hover:bg-[#294B38]/10"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addSelectedProductToCart}
+                    className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#294B38] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#203B2C] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B9573C]"
+                  >
+                    <ShoppingBag size={17} />
+                    Add {detailQuantity} to bag · ₹{selectedProduct.price * detailQuantity}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        </div>
+      )}
+
       {/* Shopping bag drawer */}
       {cartOpen && (
         <div className="fixed inset-0 z-50">
@@ -1042,23 +1385,35 @@ useEffect(() => {
                             ₹{product.price}
                           </p>
 
-                          <div className="mt-3 inline-flex items-center gap-4 rounded-full border border-[#294B38]/15 px-3 py-1.5">
+                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <div className="inline-flex items-center gap-4 rounded-full border border-[#294B38]/15 px-3 py-1.5">
+                              <button
+                                aria-label={`Remove one ${product.name}`}
+                                onClick={() => changeQuantity(product.id, -1)}
+                                className="text-lg"
+                              >
+                                −
+                              </button>
+                              <span className="min-w-3 text-center text-sm">
+                                {cart[product.id]}
+                              </span>
+                              <button
+                                aria-label={`Add one ${product.name}`}
+                                onClick={() => addToCart(product.id)}
+                                className="text-lg"
+                              >
+                                +
+                              </button>
+                            </div>
                             <button
-                              aria-label={`Remove one ${product.name}`}
-                              onClick={() => changeQuantity(product.id, -1)}
-                              className="text-lg"
+                              onClick={() => setCart((current) => {
+                                const next = { ...current };
+                                delete next[product.id];
+                                return next;
+                              })}
+                              className="inline-flex items-center gap-1 text-xs text-[#B9573C] hover:underline"
                             >
-                              −
-                            </button>
-                            <span className="min-w-3 text-center text-sm">
-                              {cart[product.id]}
-                            </span>
-                            <button
-                              aria-label={`Add one ${product.name}`}
-                              onClick={() => addToCart(product.id)}
-                              className="text-lg"
-                            >
-                              +
+                              <Trash2 size={13} /> Remove
                             </button>
                           </div>
                         </div>
@@ -1070,24 +1425,34 @@ useEffect(() => {
 
             {cartCount > 0 && (
               <div className="border-t border-[#294B38]/10 p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#746D60]">Subtotal</span>
-                  <span className="font-serif text-2xl text-[#294B38]">
-                    ₹{cartTotal}
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#746D60]">Subtotal</span>
+                    <span>₹{cartTotal.toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#746D60]">Delivery</span>
+                    <span>{deliveryCharge === 0 ? "FREE" : `₹${deliveryCharge}`}</span>
+                  </div>
+                  {cartTotal > 0 && cartTotal < 799 && (
+                    <p className="text-xs text-[#746D60]">Add ₹{799 - cartTotal} more for free delivery.</p>
+                  )}
+                  <div className="flex items-center justify-between border-t border-[#294B38]/10 pt-3">
+                    <span className="text-sm font-semibold text-[#294B38]">Total</span>
+                    <span className="font-serif text-2xl text-[#294B38]">₹{orderTotal.toLocaleString("en-IN")}</span>
+                  </div>
                 </div>
 
                 <p className="mt-2 text-xs leading-5 text-[#746D60]">
-                  Demo subtotal only. Delivery charges and payment are not
-                  connected yet.
+                  Demo checkout. No real payment will be collected.
                 </p>
 
                 <button
-                  onClick={() =>
-                    window.alert(
-                      "Demo checkout: payment and order placement will be implemented in a later milestone.",
-                    )
-                  }
+                  onClick={() => {
+                    setCheckoutError("");
+                    setCartOpen(false);
+                    setCheckoutOpen(true);
+                  }}
                   className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#294B38] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#203B2C]"
                 >
                   Continue to checkout
@@ -1096,6 +1461,115 @@ useEffect(() => {
               </div>
             )}
           </motion.aside>
+        </div>
+      )}
+
+      {/* Checkout: demo address and payment selection */}
+      {checkoutOpen && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/45 p-3 backdrop-blur-sm sm:p-6">
+          <div className="mx-auto my-4 grid w-full max-w-5xl overflow-hidden rounded-3xl bg-[#F8F3E9] shadow-2xl md:grid-cols-[1.15fr_0.85fr]">
+            <section className="p-5 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Almost yours</p>
+                  <h2 className="mt-2 font-serif text-3xl text-[#294B38]">Delivery details</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#746D60]">Tell us where to send your traditional favourites.</p>
+                </div>
+                <button aria-label="Close checkout" onClick={() => setCheckoutOpen(false)} className="rounded-full p-2 hover:bg-[#294B38]/10"><X size={20} /></button>
+              </div>
+
+              <form className="mt-7 space-y-5" onSubmit={placeDemoOrder}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-medium text-[#294B38]">Full name
+                    <input required autoComplete="name" value={deliveryForm.fullName} onChange={(event) => setDeliveryForm({ ...deliveryForm, fullName: event.target.value })} className="mt-2 w-full rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="Name for delivery" />
+                  </label>
+                  <label className="block text-sm font-medium text-[#294B38]">Mobile number
+                    <input required type="tel" inputMode="numeric" autoComplete="tel" maxLength={10} value={deliveryForm.phone} onChange={(event) => setDeliveryForm({ ...deliveryForm, phone: event.target.value.replace(/\D/g, "").slice(0, 10) })} className="mt-2 w-full rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="10-digit number" />
+                  </label>
+                </div>
+                <label className="block text-sm font-medium text-[#294B38]">House / street / area
+                  <textarea required autoComplete="street-address" rows={3} value={deliveryForm.addressLine} onChange={(event) => setDeliveryForm({ ...deliveryForm, addressLine: event.target.value })} className="mt-2 w-full resize-y rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="Door number, street, locality" />
+                </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-medium text-[#294B38]">City / town
+                    <input required autoComplete="address-level2" value={deliveryForm.city} onChange={(event) => setDeliveryForm({ ...deliveryForm, city: event.target.value })} className="mt-2 w-full rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="e.g. Chennai" />
+                  </label>
+                  <label className="block text-sm font-medium text-[#294B38]">PIN code
+                    <input required inputMode="numeric" autoComplete="postal-code" maxLength={6} value={deliveryForm.pincode} onChange={(event) => setDeliveryForm({ ...deliveryForm, pincode: event.target.value.replace(/\D/g, "").slice(0, 6) })} className="mt-2 w-full rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="6-digit PIN" />
+                  </label>
+                </div>
+                <label className="block text-sm font-medium text-[#294B38]">Delivery note <span className="font-normal text-[#746D60]">(optional)</span>
+                  <input value={deliveryForm.notes} onChange={(event) => setDeliveryForm({ ...deliveryForm, notes: event.target.value })} className="mt-2 w-full rounded-xl border border-[#294B38]/15 bg-white/70 px-4 py-3 font-normal outline-none focus:border-[#B9573C]" placeholder="Landmark or delivery instructions" />
+                </label>
+
+                <div>
+                  <h3 className="flex items-center gap-2 font-serif text-xl text-[#294B38]"><CreditCard size={19} /> Payment method</h3>
+                  <p className="mt-1 text-xs leading-5 text-[#746D60]">Choose a demo option. This prototype does not process real payments.</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    {["Cash on delivery", "UPI (demo)", "Card (demo)"].map((method) => (
+                      <label key={method} className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${paymentMethod === method ? "border-[#294B38] bg-[#DCE4D6]/60" : "border-[#294B38]/15 bg-white/40"}`}>
+                        <input type="radio" name="paymentMethod" value={method} checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="accent-[#294B38]" />
+                        <span>{method}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {checkoutError && <p role="alert" className="rounded-xl bg-[#B9573C]/10 p-3 text-sm text-[#9B3D29]">{checkoutError}</p>}
+                <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-[#294B38] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#203B2C]">
+                  Place demo order · ₹{orderTotal.toLocaleString("en-IN")} <ArrowRight size={17} />
+                </button>
+                <p className="text-center text-xs leading-5 text-[#746D60]">By placing this demo order, you are testing the OorSoru prototype. No real transaction occurs.</p>
+              </form>
+            </section>
+
+            <aside className="border-t border-[#294B38]/10 bg-[#EEE6D8] p-5 sm:p-8 md:border-l md:border-t-0">
+              <h3 className="font-serif text-2xl text-[#294B38]">Order summary</h3>
+              <div className="mt-5 space-y-4">
+                {products.filter((product) => (cart[product.id] ?? 0) > 0).map((product) => (
+                  <div key={product.id} className="flex items-center gap-3">
+                    <img src={product.image} alt={product.name} className="h-14 w-14 rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[#294B38]">{product.name}</p>
+                      <p className="mt-1 text-xs text-[#746D60]">Qty {cart[product.id]} × ₹{product.price}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-[#294B38]">₹{product.price * cart[product.id]}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 space-y-3 border-t border-[#294B38]/15 pt-5 text-sm">
+                <div className="flex justify-between"><span className="text-[#746D60]">Subtotal</span><span>₹{cartTotal.toLocaleString("en-IN")}</span></div>
+                <div className="flex justify-between"><span className="text-[#746D60]">Delivery</span><span>{deliveryCharge === 0 ? "FREE" : `₹${deliveryCharge}`}</span></div>
+                <div className="flex justify-between border-t border-[#294B38]/15 pt-4 text-base font-semibold text-[#294B38]"><span>Total</span><span>₹{orderTotal.toLocaleString("en-IN")}</span></div>
+              </div>
+              <div className="mt-6 rounded-2xl bg-white/60 p-4 text-sm leading-6 text-[#746D60]"><MapPin size={17} className="mb-2 text-[#B9573C]" />Delivery is simulated for this prototype. A real version would validate serviceability and delivery estimates.</div>
+            </aside>
+          </div>
+        </div>
+      )}
+
+      {/* Demo order confirmation */}
+      {orderConfirmation && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/45 p-4 backdrop-blur-sm">
+          <motion.section initial={{ opacity: 0, y: reduceMotion ? 0 : 16 }} animate={{ opacity: 1, y: 0 }} className="my-6 w-full max-w-lg rounded-3xl bg-[#F8F3E9] p-6 text-center shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="order-confirmation-title">
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#DCE4D6] text-[#294B38]"><CheckCircle2 size={34} /></span>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-[#B9573C]">Order placed · demo</p>
+            <h2 id="order-confirmation-title" className="mt-2 font-serif text-3xl text-[#294B38]">Thank you, {orderConfirmation.customerName.split(" ")[0]}!</h2>
+            <p className="mt-3 text-sm leading-6 text-[#746D60]">Your sample order has been saved in this browser. No payment was processed.</p>
+            <div className="mt-6 rounded-2xl border border-[#294B38]/10 bg-white/50 p-4 text-left">
+              <div className="flex justify-between gap-3 text-sm"><span className="text-[#746D60]">Order ID</span><strong className="text-[#294B38]">{orderConfirmation.orderId}</strong></div>
+              <div className="mt-3 flex justify-between gap-3 text-sm"><span className="text-[#746D60]">Payment</span><span className="text-right text-[#294B38]">{orderConfirmation.paymentMethod}</span></div>
+              <div className="mt-3 flex justify-between gap-3 text-sm"><span className="text-[#746D60]">Deliver to</span><span className="max-w-[65%] text-right text-[#294B38]">{orderConfirmation.address}</span></div>
+              <div className="mt-4 border-t border-[#294B38]/10 pt-4">
+                {orderConfirmation.items.map((item) => <div key={item.name} className="flex justify-between gap-3 py-1 text-sm"><span className="text-[#746D60]">{item.name} × {item.quantity}</span><span>₹{item.price * item.quantity}</span></div>)}
+              </div>
+              <div className="mt-3 space-y-2 border-t border-[#294B38]/10 pt-4 text-sm">
+                <div className="flex justify-between"><span className="text-[#746D60]">Subtotal</span><span>₹{orderConfirmation.subtotal}</span></div>
+                <div className="flex justify-between"><span className="text-[#746D60]">Delivery</span><span>{orderConfirmation.delivery === 0 ? "FREE" : `₹${orderConfirmation.delivery}`}</span></div>
+                <div className="flex justify-between pt-2 text-base font-semibold text-[#294B38]"><span>Order total</span><span>₹{orderConfirmation.total}</span></div>
+              </div>
+            </div>
+            <button onClick={() => { setOrderConfirmation(null); setCheckoutError(""); scrollToShop(); }} className="mt-6 w-full rounded-full bg-[#294B38] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#203B2C]">Continue exploring OorSoru</button>
+          </motion.section>
         </div>
       )}
 

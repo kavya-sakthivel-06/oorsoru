@@ -1,4 +1,4 @@
-// OorSoru Step 6: connected demo workflow across storefront, maker portal and admin dashboard.
+// Kaveri Heritage Foods Step 6: connected demo workflow across storefront, maker portal and admin dashboard.
 // Uses shared React state and localStorage; production use requires a secure backend.
 
 import { useEffect, useMemo, useState } from "react";
@@ -91,121 +91,58 @@ function formatOrderDate(value: string) {
 
 const products: Product[] = [
   {
-    id: 1,
-    name: "Andhra Avakaya Pickle",
-    maker: "Amma's Pantry",
-    price: 249,
-    category: "Pickles",
-    image:
-      "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=85",
-    description: "A bold, tangy favourite for everyday meals.",
-    label: "Local favourite",
-    rating: "4.8",
-    netWeight: "300 g",
-    ingredients: ["Raw mango", "Mustard", "Red chilli", "Sesame oil", "Salt"],
-    allergens: "Contains mustard. Prepared in a kitchen that may handle peanuts.",
-    shelfLife: "6 months from packing (demo information)",
-    storage: "Store in a cool, dry place. Use a clean, dry spoon.",
-    preparationTime: "Ready to eat",
-    availability: "Ready to dispatch",
-    dispatchEstimate: "Usually dispatched in 1–2 working days",
+    id: 1, name: "Thanjavur Ashoka Halwa", maker: "Kaveri Heritage Foods", price: 360, category: "Sweets",
+    image: "https://www.kumarisnacks.com/images/traditional-sweets-card.png",
+    description: "The crown jewel of Thanjavur confectionery. Roasted yellow moong dal slow-simmered with pure village cow ghee, fragrant cardamom, and toasted cashews, served in traditional celebratory style.", label: "Thanjavur Special", rating: "4.8", netWeight: "350 g · Clay Handi",
+    ingredients: ["Moong Dal", "Pure Desi Ghee", "Cane Sugar", "Kaju (Cashews)", "Green Cardamom"], allergens: "Contains dairy and cashews. Verify the product label for cross-contact information.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store as directed on the product label.", preparationTime: "Ready to serve", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
   {
-    id: 2,
-    name: "Traditional Idli Podi",
-    maker: "Paati's Kitchen",
-    price: 149,
-    category: "Podis",
-    image:
-      "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=900&q=85",
-    description: "Aromatic spices for your morning idlis.",
-    label: "Small batch",
-    rating: "4.9",
-    netWeight: "200 g",
-    ingredients: ["Roasted lentils", "Red chilli", "Sesame", "Curry leaves", "Salt"],
-    allergens: "Contains sesame. Check the maker’s label for cross-contact details.",
-    shelfLife: "4 months from packing (demo information)",
-    storage: "Keep airtight in a cool, dry place.",
-    preparationTime: "Ready to serve; mix with oil or ghee",
-    availability: "Made to order",
-    dispatchEstimate: "Prepared in small batches; dispatch in 3–5 working days",
+    id: 2, name: "Traditional Handmade Murukku", maker: "Kaveri Heritage Foods", price: 240, category: "Snacks",
+    image: "https://www.mymoonstores.com/img/hero-snacks.png",
+    description: "Crunchy, spiral-shaped thenkuzhal murukku made with stone-ground raw rice flour, urad dal, cumin, and sesame seeds, then fried in cold-pressed groundnut oil.", label: "Artisanal Savory", rating: "4.8", netWeight: "300 g · Pack of 10",
+    ingredients: ["Raw Rice Flour", "Urad Dal", "Sesame Seeds", "Asafoetida", "Cold-Pressed Oil"], allergens: "Contains sesame; check the label for other allergens.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Keep sealed in an airtight container away from moisture.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
   {
-    id: 3,
-    name: "Handmade Murukku",
-    maker: "Namma Snacks",
-    price: 199,
-    category: "Snacks",
-    image:
-      "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=900&q=85",
-    description: "A crunchy snack for tea-time cravings.",
-    rating: "4.7",
-    netWeight: "250 g",
-    ingredients: ["Rice flour", "Urad dal flour", "Butter", "Cumin", "Salt"],
-    allergens: "Contains dairy. Check the maker’s label for cross-contact details.",
-    shelfLife: "30 days from packing (demo information)",
-    storage: "Keep sealed in an airtight container away from moisture.",
-    preparationTime: "Ready to eat",
-    availability: "Limited batch",
-    dispatchEstimate: "Next small-batch dispatch in 2–4 working days",
+    id: 3, name: "Heritage Sesame Oil Mango Pickle", maker: "Kaveri Heritage Foods", price: 290, category: "Pickles",
+    image: "https://szebybjegyrvnrinrfxm.supabase.co/storage/v1/object/public/product-images/foodlogin-hero.webp",
+    description: "Tender baby mangoes with wood-pressed chekku gingelly oil, hand-pounded red chillies, fenugreek, and sea salt, inspired by traditional sun-cured pickles.", label: "Grandmother Recipe", rating: "4.8", netWeight: "400 g · Ceramic Jar",
+    ingredients: ["Farm Mangoes", "Wood-Pressed Sesame Oil", "Guntur Chilli", "Mustard", "Fenugreek"], allergens: "Contains mustard; check the label for other allergens.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store as directed on the product label; use a clean, dry spoon.", preparationTime: "Ready to serve", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
   {
-    id: 4,
-    name: "Homestyle Spice Blend",
-    maker: "The Spice Paati",
-    price: 179,
-    category: "Podis",
-    image:
-      "https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=900&q=85",
-    description: "A fragrant blend made for traditional cooking.",
-    label: "Maker's pick",
-    rating: "4.8",
-    netWeight: "150 g",
-    ingredients: ["Coriander", "Cumin", "Black pepper", "Red chilli", "Fenugreek"],
-    allergens: "May contain traces of sesame and peanuts.",
-    shelfLife: "5 months from packing (demo information)",
-    storage: "Store airtight, away from direct sunlight.",
-    preparationTime: "Ready to use in cooking",
-    availability: "Made to order",
-    dispatchEstimate: "Prepared after order; dispatch in 3–5 working days",
+    id: 4, name: "Organic Palm Jaggery Sweets", maker: "Kaveri Heritage Foods", price: 420, category: "Sweets",
+    image: "https://nithyaamirtham.com/cdn/shop/articles/nithya-amirtham-sweet-restaurant-karupatti-the-traditional-sweetener-in-south-indian-sweets_720x.jpg?v=1779431224",
+    description: "Karupatti halwa and mittai made with native palm jaggery, roasted cashews, dry ginger, and cardamom for a deep, earthy sweetness.", label: "100% Karupatti", rating: "4.8", netWeight: "300 g · 15 pieces",
+    ingredients: ["Native Palm Jaggery", "Pure Ghee", "Dry Ginger (Sukku)", "Cardamom", "Cashews"], allergens: "Contains dairy and cashews.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store in a cool, dry place and follow the label instructions.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
   {
-    id: 5,
-    name: "Festival Sweet Bites",
-    maker: "Anbu Homemade",
-    price: 229,
-    category: "Sweets",
-    image:
-      "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85",
-    description: "Sweet little bites for sharing with family.",
-    rating: "4.6",
-    netWeight: "200 g",
-    ingredients: ["Gram flour", "Sugar", "Ghee", "Cardamom", "Cashew"],
-    allergens: "Contains dairy and cashew nuts.",
-    shelfLife: "21 days from packing (demo information)",
-    storage: "Store in a cool, dry place and reseal after opening.",
-    preparationTime: "Ready to eat",
-    availability: "Limited batch",
-    dispatchEstimate: "Small-batch dispatch in 2–4 working days",
+    id: 5, name: "Handmade Cardamom Pistachio Fudge", maker: "Kaveri Heritage Foods", price: 480, category: "Sweets",
+    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85",
+    description: "Kesar pista burfi made with milk mawa, freshly crushed green cardamom, and toasted pistachios.", label: "Best Seller", rating: "4.8", netWeight: "250 g · 16 pieces",
+    ingredients: ["Fresh Mawa (Khoya)", "Pistachios", "Green Cardamom", "Sugar", "Silver Vark"], allergens: "Contains dairy and pistachios.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store as directed on the product label.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
   {
-    id: 6,
-    name: "Traditional Snack Mix",
-    maker: "Namma Snacks",
-    price: 159,
-    category: "Snacks",
-    image:
-      "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=85",
-    description: "A crunchy companion for your evening chai.",
-    rating: "4.7",
-    netWeight: "250 g",
-    ingredients: ["Flattened rice", "Peanuts", "Roasted gram", "Curry leaves", "Spices"],
-    allergens: "Contains peanuts. Check label for other allergens.",
-    shelfLife: "45 days from packing (demo information)",
-    storage: "Keep sealed in a cool, dry place.",
-    preparationTime: "Ready to eat",
-    availability: "Ready to dispatch",
-    dispatchEstimate: "Usually dispatched in 1–2 working days",
+    id: 6, name: "Traditional Jaggery Coconut Crunch", maker: "Kaveri Heritage Foods", price: 320, category: "Sweets",
+    image: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=900&q=85",
+    description: "Fresh coconut slow-roasted with unrefined jaggery, black pepper, and cardamom for a crisp, chewy traditional treat.", rating: "4.8", netWeight: "300 g · 20 pieces",
+    ingredients: ["Pollachi Coconut", "Organic Jaggery", "Crushed Pepper", "Cardamom", "Desi Ghee"], allergens: "Contains dairy if prepared with ghee; check the product label.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Keep sealed in a cool, dry place.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
+  },
+  {
+    id: 7, name: "Royal Ghee Mysore Pak", maker: "Kaveri Heritage Foods", price: 450, category: "Sweets",
+    image: "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&w=900&q=85",
+    description: "A traditional soft Mysore Pak crafted from slow-roasted gram flour, country cow ghee, and sugar syrup.", label: "Royal Recipe", rating: "4.8", netWeight: "350 g · 12 blocks",
+    ingredients: ["Gram Flour (Besan)", "Village Cow Ghee", "Cane Sugar", "Cardamom Essence"], allergens: "Contains dairy and gram flour.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store as directed on the product label.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
+  },
+  {
+    id: 8, name: "Small-Batch Dark Chocolate Sea Salt Truffles", maker: "Kaveri Heritage Foods", price: 650, category: "Sweets",
+    image: "https://images.unsplash.com/photo-1548907040-4d42daa2f4b8?auto=format&fit=crop&w=900&q=85",
+    description: "70% cacao ganache hand-rolled in cocoa powder and finished with a delicate flake of pink salt.", label: "Artisan Batch", rating: "4.8", netWeight: "200 g · 12 truffles",
+    ingredients: ["70% Cacao", "Fresh Milk Cream", "Pink Salt", "Cocoa Powder"], allergens: "Contains dairy; check the label for other allergens.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store as directed on the product label; protect from heat.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
+  },
+  {
+    id: 9, name: "Rose Petal & Almond Infused Pralines", maker: "Kaveri Heritage Foods", price: 560, category: "Sweets",
+    image: "https://images.unsplash.com/photo-1571506165871-ee72a35bc9d4?auto=format&fit=crop&w=900&q=85",
+    description: "Caramelised almonds with hand-dried rose petals and a touch of honey gulkand, balancing floral aroma and a delicate crunch.", label: "Seasonal Craft", rating: "4.8", netWeight: "180 g · 10 pieces",
+    ingredients: ["Almonds", "Damask Rose Petals", "Honey Gulkand", "Cane Sugar"], allergens: "Contains almonds and honey.", shelfLife: "Confirm the packed-on date and shelf life on the product label.", storage: "Store in a cool, dry place and follow the label instructions.", preparationTime: "Ready to eat", availability: "Limited batch", dispatchEstimate: "Estimated delivery in 1–3 business days",
   },
 ];
 
@@ -213,25 +150,25 @@ const categories = [
   {
     name: "Pickles",
     subtitle: "Bold, tangy & homemade",
-    image: products[0].image,
+    image: products[2].image,
     background: "#F0DCCB",
   },
   {
     name: "Podis",
     subtitle: "A little spice, a lot of love",
-    image: products[1].image,
+    image: products[3].image,
     background: "#E7C98E",
   },
   {
     name: "Snacks",
     subtitle: "Crunchy little memories",
-    image: products[2].image,
+    image: products[1].image,
     background: "#DCE4D6",
   },
   {
     name: "Sweets",
     subtitle: "Made for sharing",
-    image: products[4].image,
+    image: products[0].image,
     background: "#F1D8D8",
   },
 ];
@@ -263,6 +200,7 @@ export default function App() {
   const reduceMotion = useReducedMotion();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [storyPageOpen, setStoryPageOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
@@ -310,7 +248,8 @@ useEffect(() => {
   const [makerStock, setMakerStock] = useState<Record<number, { stock: number; listed: boolean }>>(() => {
     try {
       const saved = localStorage.getItem("oorsoru-maker-stock");
-      if (saved) return JSON.parse(saved);
+      const defaults = Object.fromEntries(products.map((product) => [product.id, { stock: 12, listed: true }]));
+      if (saved) return { ...defaults, ...(JSON.parse(saved) as Record<number, { stock: number; listed: boolean }>) };
     } catch { /* use demo defaults */ }
     return Object.fromEntries(products.map((product) => [product.id, { stock: 12, listed: true }]));
   });
@@ -340,37 +279,25 @@ useEffect(() => {
   });
   const [manufacturerVerification, setManufacturerVerification] = useState<Record<string, VerificationStatus>>(() => {
     try {
-      const saved = localStorage.getItem("oorsoru-admin-manufacturers");
+      const saved = localStorage.getItem("kaveri-admin-manufacturers");
       const defaults: Record<string, VerificationStatus> = {
-        "Amma's Pantry": "Verified",
-        "Paati's Kitchen": "Verified",
-        "Namma Snacks": "Pending",
-        "The Spice Paati": "Verified",
-        "Anbu Homemade": "Verified",
-        "Village Millet Works": "Pending",
-        "Chettinad Home Foods": "Verified",
+        "Kaveri Heritage Foods": "Verified",
       };
       // Merge defaults so existing browser data from Step 5 gains the new maker records.
       return saved ? { ...defaults, ...(JSON.parse(saved) as Record<string, VerificationStatus>) } : defaults;
     } catch { /* use demo defaults below */ }
     return {
-      "Amma's Pantry": "Verified",
-      "Paati's Kitchen": "Verified",
-      "Namma Snacks": "Pending",
-      "The Spice Paati": "Verified",
-      "Anbu Homemade": "Verified",
-      "Village Millet Works": "Pending",
-      "Chettinad Home Foods": "Verified",
+      "Kaveri Heritage Foods": "Verified",
     };
   });
   const [productApproval, setProductApproval] = useState<Record<number, ApprovalStatus>>(() => {
     try {
-      const saved = localStorage.getItem("oorsoru-admin-products");
-      const defaults = Object.fromEntries(products.map((product) => [product.id, product.id === 3 ? "Pending" : "Approved"])) as Record<number, ApprovalStatus>;
+      const saved = localStorage.getItem("kaveri-admin-products");
+      const defaults = Object.fromEntries(products.map((product) => [product.id, "Approved"])) as Record<number, ApprovalStatus>;
       // Preserve admin decisions while adding any product IDs introduced in later steps.
       return saved ? { ...defaults, ...(JSON.parse(saved) as Record<number, ApprovalStatus>) } : defaults;
     } catch { /* use demo defaults below */ }
-    return Object.fromEntries(products.map((product) => [product.id, product.id === 3 ? "Pending" : "Approved"])) as Record<number, ApprovalStatus>;
+    return Object.fromEntries(products.map((product) => [product.id, "Approved"])) as Record<number, ApprovalStatus>;
   });
   const [orderExceptions, setOrderExceptions] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem("oorsoru-order-exceptions") || "{}"); }
@@ -383,8 +310,8 @@ useEffect(() => {
 
   useEffect(() => {
     try {
-      localStorage.setItem("oorsoru-admin-manufacturers", JSON.stringify(manufacturerVerification));
-      localStorage.setItem("oorsoru-admin-products", JSON.stringify(productApproval));
+      localStorage.setItem("kaveri-admin-manufacturers", JSON.stringify(manufacturerVerification));
+      localStorage.setItem("kaveri-admin-products", JSON.stringify(productApproval));
       localStorage.setItem("oorsoru-order-exceptions", JSON.stringify(orderExceptions));
       localStorage.setItem("oorsoru-settlements", JSON.stringify(settlementStatus));
       localStorage.setItem("oorsoru-commission-rate", String(commissionRate));
@@ -428,7 +355,7 @@ useEffect(() => {
     try {
       localStorage.setItem("oorsoru-orders", JSON.stringify(orders));
     } catch (error) {
-      console.error("Could not save OorSoru order history", error);
+      console.error("Could not save Kaveri Heritage Foods order history", error);
     }
   }, [orders]);
 
@@ -676,7 +603,10 @@ useEffect(() => {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#F8F3E9] text-[#292D24]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#F8F3E9] text-[#292D24]">
+      {/* Subtle kolam-inspired side borders. Decorative only; controls remain clickable. */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-y-0 left-0 z-40 hidden w-5 opacity-40 lg:block" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='72' viewBox='0 0 24 72'%3E%3Cg fill='none' stroke='%23B9573C' stroke-width='1.15'%3E%3Cpath d='M12 3 C2 10 2 18 12 24 C22 18 22 10 12 3Z M12 24 C2 31 2 39 12 45 C22 39 22 31 12 24Z M12 45 C2 52 2 60 12 66 C22 60 22 52 12 45Z'/%3E%3Cpath d='M3 13 Q12 22 21 13 M3 34 Q12 43 21 34 M3 55 Q12 64 21 55'/%3E%3Ccircle cx='12' cy='13' r='2'/%3E%3Ccircle cx='12' cy='34' r='2'/%3E%3Ccircle cx='12' cy='55' r='2'/%3E%3C/g%3E%3C/svg%3E\")", backgroundRepeat: "repeat-y", backgroundSize: "20px 72px" }} />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-y-0 right-0 z-40 hidden w-5 opacity-40 lg:block" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='72' viewBox='0 0 24 72'%3E%3Cg fill='none' stroke='%23B9573C' stroke-width='1.15'%3E%3Cpath d='M12 3 C2 10 2 18 12 24 C22 18 22 10 12 3Z M12 24 C2 31 2 39 12 45 C22 39 22 31 12 24Z M12 45 C2 52 2 60 12 66 C22 60 22 52 12 45Z'/%3E%3Cpath d='M3 13 Q12 22 21 13 M3 34 Q12 43 21 34 M3 55 Q12 64 21 55'/%3E%3Ccircle cx='12' cy='13' r='2'/%3E%3Ccircle cx='12' cy='34' r='2'/%3E%3Ccircle cx='12' cy='55' r='2'/%3E%3C/g%3E%3C/svg%3E\")", backgroundRepeat: "repeat-y", backgroundSize: "20px 72px" }} />
       {/* Announcement bar */}
       <div className="bg-[#294B38] px-4 py-2.5 text-center text-xs tracking-wide text-[#F8F3E9]">
         <span className="inline-flex items-center justify-center gap-2">
@@ -696,7 +626,7 @@ useEffect(() => {
 
             <span>
               <span className="block font-serif text-2xl font-bold tracking-tight text-[#294B38]">
-                OorSoru
+                Kaveri Heritage Foods
               </span>
               <span className="block text-[9px] tracking-[0.19em] text-[#746D60]">
                 TRADITION, PACKED WITH LOVE
@@ -711,12 +641,12 @@ useEffect(() => {
             <a href="#categories" className="transition hover:text-[#B9573C]">
               Categories
             </a>
-            <a href="#makers" className="transition hover:text-[#B9573C]">
-              Our makers
+            <a href="#manufacturer-profile" className="transition hover:text-[#B9573C]">
+              Manufacturer profile
             </a>
-            <a href="#story" className="transition hover:text-[#B9573C]">
+            <button type="button" onClick={() => setStoryPageOpen(true)} className="transition hover:text-[#B9573C]">
               Our story
-            </a>
+            </button>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
@@ -854,16 +784,16 @@ useEffect(() => {
             className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#B9573C]/20 bg-[#B9573C]/5 px-4 py-2 text-xs font-medium tracking-wide text-[#B9573C]"
           >
             <Sparkles size={14} />
-            A LITTLE TASTE OF HOME
+            THANJAVUR, TAMIL NADU · EST. 1987
           </motion.div>
 
           <motion.h1
             variants={fadeUp}
             className="max-w-xl font-serif text-5xl font-medium leading-[1.08] tracking-tight text-[#294B38] sm:text-6xl lg:text-7xl"
           >
-            The goodness of tradition.
+            Handcrafted with
             <span className="mt-2 block italic text-[#B9573C]">
-              Made for today.
+              Ancient Recipes, Modern Love.
             </span>
           </motion.h1>
 
@@ -871,8 +801,7 @@ useEffect(() => {
             variants={fadeUp}
             className="mt-7 max-w-lg text-base leading-8 text-[#746D60] sm:text-lg"
           >
-            Discover handcrafted pickles, podis, snacks and sweets from
-            small-scale makers who keep our food traditions alive.
+            Authentic South Indian artisanal sweets and savories from the heart of Thanjavur — traditional recipes, wood-pressed oils, pure country cow ghee, and care passed down over generations.
           </motion.p>
 
           <motion.div
@@ -883,18 +812,15 @@ useEffect(() => {
               onClick={scrollToShop}
               className="group inline-flex items-center gap-3 rounded-full bg-[#294B38] px-7 py-4 text-sm font-medium text-white transition hover:bg-[#203B2C]"
             >
-              Explore the collection
+              Explore Sweets Collection
               <ArrowRight
                 size={17}
                 className="transition-transform group-hover:translate-x-1"
               />
             </button>
 
-            <a
-              href="#story"
-              className="rounded-full px-5 py-4 text-sm font-medium text-[#294B38] transition hover:text-[#B9573C]"
-            >
-              Our story ↗
+            <a href="#manufacturer-profile" className="rounded-full px-5 py-4 text-sm font-medium text-[#294B38] transition hover:text-[#B9573C]">
+              View Manufacturer Profile ↗
             </a>
           </motion.div>
 
@@ -927,6 +853,9 @@ useEffect(() => {
               </p>
             </div>
           </motion.div>
+          <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-2 text-xs text-[#294B38]">
+            { ["🌿 Zero Preservatives", "🤝 Authentically Handmade", "⭐ 4.8 / 5.0 Rating", "🚚 1–3 Day Delivery"].map((item) => <span key={item} className="rounded-full border border-[#294B38]/15 bg-white/70 px-3 py-2">{item}</span>) }
+          </motion.div>
         </motion.div>
 
         {/* Hero image */}
@@ -944,8 +873,8 @@ useEffect(() => {
 
           <div className="relative overflow-hidden rounded-[46%_46%_18px_18px] bg-[#E7C98E]">
             <img
-              src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=90"
-              alt="A colourful food spread with spices and fresh ingredients"
+              src="https://d31ajqzatc2qj3.cloudfront.net/xl_22_Thinnai_1_Under_the_warm_glow_of_evening_lights_Shruti_s_traditional_thinnai_invites_peaceful_contemplation_022ecf7df2.webp"
+              alt="Traditional Tamil heritage home with a shaded thinnai verandah and tiled roof"
               className="h-[390px] w-full object-cover sm:h-[520px] lg:h-[590px]"
               fetchPriority="high"
             />
@@ -954,10 +883,10 @@ useEffect(() => {
 
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white sm:p-9">
               <p className="text-xs tracking-[0.22em] text-white/80">
-                FROM OUR HOMES TO YOURS
+                A THINNAI-WARM WELCOME
               </p>
               <p className="mt-2 font-serif text-3xl sm:text-4xl">
-                A tradition worth sharing.
+                Where every recipe feels like home.
               </p>
             </div>
           </div>
@@ -998,6 +927,43 @@ useEffect(() => {
             <span className="font-serif text-xl italic">love</span>
           </div>
         </motion.div>
+      </section>
+
+      {/* Manufacturer profile */}
+      <section id="manufacturer-profile" className="scroll-mt-24 px-5 py-16 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 text-center">
+            <p className="text-xs font-semibold tracking-[0.24em] text-[#B9573C]">MANUFACTURER PROFILE</p>
+            <h2 className="mt-3 font-serif text-4xl text-[#294B38] sm:text-5xl">Kaveri Heritage Foods</h2>
+            <p className="mt-3 text-sm font-semibold tracking-wide text-[#746D60]">Traditional Foods &amp; Agro Enterprise</p>
+            <p className="mt-2 text-sm text-[#746D60]">Thanjavur, Tamil Nadu · 613001 · Est. 1987</p>
+          </div>
+          <div className="grid gap-8 rounded-3xl border border-[#294B38]/10 bg-white p-6 shadow-sm md:grid-cols-[0.9fr_1.1fr] md:p-10">
+            <div className="flex flex-col justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DCE4D6] text-[#294B38]"><Leaf size={28}/></div>
+              <p className="mt-5 text-xs font-semibold tracking-[0.2em] text-[#B9573C]">KAVERI HERITAGE</p>
+              <h3 className="mt-2 font-serif text-3xl text-[#294B38]">A taste of Thanjavur, made with care.</h3>
+              <p className="mt-4 text-sm leading-7 text-[#746D60]">Each confection and savory is inspired by South Indian culinary heritage and the recipes shared across generations. Our small-batch philosophy celebrates familiar flavours, thoughtful preparation, and ingredients rooted in tradition.</p>
+              <div className="mt-5 rounded-2xl bg-[#F8F3E9] p-4 text-sm leading-6 text-[#294B38]"><strong>FSSAI Registration:</strong> 67676767676767 <span className="mt-1 block text-xs text-[#746D60]">Demo profile detail — verify the registration number and claims before publishing commercially.</span></div>
+            </div>
+            <div>
+              <h3 className="font-serif text-2xl text-[#294B38]">Featured products</h3>
+              <div className="mt-5 grid grid-cols-2 gap-4">
+                {products.slice(0,4).map((product) => <button key={product.id} onClick={() => { setSelectedProduct(product); }} className="group overflow-hidden rounded-2xl border border-[#294B38]/10 text-left transition hover:-translate-y-1 hover:shadow-md"><img src={product.image} alt={product.name} loading="lazy" className="h-32 w-full object-cover transition group-hover:scale-[1.02]"/><div className="p-3"><p className="text-sm font-semibold text-[#294B38]">{product.id === 1 ? "Thanjavur Ashoka Halwa" : product.id === 2 ? "Handmade Murukku" : product.id === 3 ? "Sesame Oil Pickle" : "Palm Jaggery Sweets"}</p><p className="mt-1 text-xs text-[#B9573C]">₹{product.price}</p></div></button>)}
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-3 rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[["Product category", "Traditional Sweets & Savories"], ["Entrepreneur", "Kaveri Heritage Foods Co."], ["Registration", "FSSAI No. 67676767676767"], ["Order status", "Accepting bulk & retail orders"], ["Delivery lead time", "1–3 business days"], ["Region & heritage", "South Indian · Traditional artisanal"]].map(([label, value]) => <div key={label} className="border-b border-[#294B38]/10 py-3 last:border-0 sm:last:border-b lg:[&:nth-last-child(-n+3)]:border-b-0"><p className="text-xs text-[#746D60]">{label}</p><p className="mt-1 text-sm font-semibold text-[#294B38]">{value}</p></div>)}
+          </div>
+          <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-medium text-[#294B38]">
+            {["🌿 Zero preservatives*", "🏆 Authentic taste", "🧼 Hygienically prepared*", "🛡️ Quality assured*", "👑 Customer priority", "Small-batch · Seasonal · Pure ingredients"].map((item) => <span key={item} className="rounded-full bg-[#DCE4D6]/70 px-3 py-2">{item}</span>)}
+          </div>
+          <p className="mt-3 text-center text-[11px] text-[#746D60]">*Confirm all product, hygiene, quality and preservative claims against actual manufacturing practices and labels before commercial use.</p>
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[["🌿","Ingredient-first craft","Traditional ingredients"],["🧼","Careful preparation","Made in considered batches"],["⭐","Customer-focused","4.8 / 5.0 demo rating"],["🚚","Delivery estimate","1–3 business days"]].map(([icon,title,detail]) => <div key={title} className="rounded-2xl border border-[#294B38]/10 bg-white/70 p-4"><p className="text-xl">{icon}</p><p className="mt-2 text-sm font-semibold text-[#294B38]">{title}</p><p className="mt-1 text-xs leading-5 text-[#746D60]">{detail}</p></div>)}
+          </div>
+        </div>
       </section>
 
       {/* Category cards */}
@@ -1319,24 +1285,23 @@ useEffect(() => {
             </h2>
 
             <p className="mt-6 max-w-lg text-sm leading-7 text-white/75 sm:text-base">
-              Behind every jar and spice blend is someone who has perfected a
-              recipe, protected a tradition and put their heart into making it.
-              OorSoru helps independent makers reach more customers.
+              From Thanjavur, Kaveri Heritage Foods celebrates artisanal South Indian sweets and savories, with a focus on heritage recipes, careful preparation, and small-batch craft.
             </p>
 
-            <a
-              href="#story"
+            <button
+              type="button"
+              onClick={() => { setStoryPageOpen(true); window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }); }}
               className="mt-8 inline-flex w-fit items-center gap-3 rounded-full bg-[#E7C98E] px-6 py-3.5 text-sm font-semibold text-[#294B38] transition hover:bg-[#F8F3E9]"
             >
               Discover our story
               <ArrowRight size={17} />
-            </a>
+            </button>
           </div>
 
           <div className="relative min-h-[300px] overflow-hidden md:min-h-[460px]">
             <img
-              src="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1000&q=85"
-              alt="A welcoming home kitchen representing traditional food makers"
+              src="https://lalithaskitchen.shop/assets/our-story-BQPbXzFj.jpg"
+              alt="Tamil woman in a traditional sari preparing food in a warm home kitchen"
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover"
             />
@@ -1377,10 +1342,7 @@ useEffect(() => {
           </h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-[#746D60]">
-            OorSoru connects customers with small-scale food makers through
-            demand-led ordering and thoughtful batch planning. By helping makers
-            plan production around demand, we aim to support their businesses
-            and reduce avoidable waste.
+            At Kaveri Heritage Foods, every batch begins with a story — of a grandmother’s recipe, traditional sweets made with care, and flavours rooted in Thanjavur. We believe authentic food is never rushed, and that heritage deserves to be shared with the next generation.
           </p>
 
           <a
@@ -1401,7 +1363,7 @@ useEffect(() => {
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E7C98E] text-[#294B38]">
                 <Leaf size={22} />
               </span>
-              <span className="font-serif text-3xl font-bold">OorSoru</span>
+              <span className="font-serif text-3xl font-bold">Kaveri Heritage Foods</span>
             </a>
 
             <p className="mt-5 max-w-sm text-sm leading-7 text-white/65">
@@ -1415,7 +1377,7 @@ useEffect(() => {
             <div className="mt-4 grid gap-3 text-sm text-white/65">
               <a href="#shop" className="hover:text-white">Shop all</a>
               <a href="#categories" className="hover:text-white">Categories</a>
-              <a href="#makers" className="hover:text-white">Our makers</a>
+              <a href="#manufacturer-profile" className="hover:text-white">Manufacturer profile</a>
               <a href="#story" className="hover:text-white">Our story</a>
             </div>
           </div>
@@ -1432,7 +1394,7 @@ useEffect(() => {
         </div>
 
         <div className="mx-auto mt-12 flex max-w-7xl flex-wrap justify-between gap-3 border-t border-white/15 pt-6 text-xs text-white/50">
-          <p>© 2026 OorSoru. Tradition, packed with love.</p>
+          <p>© 2026 Kaveri Heritage Foods. Tradition, packed with love.</p>
           <p>Built with care for local makers.</p>
         </div>
       </footer>
@@ -1816,7 +1778,7 @@ useEffect(() => {
                 <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-[#294B38] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#203B2C]">
                   Place demo order · ₹{orderTotal.toLocaleString("en-IN")} <ArrowRight size={17} />
                 </button>
-                <p className="text-center text-xs leading-5 text-[#746D60]">By placing this demo order, you are testing the OorSoru prototype. No real transaction occurs.</p>
+                <p className="text-center text-xs leading-5 text-[#746D60]">By placing this demo order, you are testing the Kaveri Heritage Foods prototype. No real transaction occurs.</p>
               </form>
             </section>
 
@@ -1858,7 +1820,7 @@ useEffect(() => {
           >
             <div className="flex items-center justify-between border-b border-[#294B38]/10 px-5 py-5 sm:px-7">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Your OorSoru account</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Your Kaveri Heritage Foods account</p>
                 <h2 id="orders-title" className="mt-1 font-serif text-2xl text-[#294B38] sm:text-3xl">Order tracking & history</h2>
                 <p className="mt-1 text-sm text-[#746D60]">Your demo orders are saved in this browser.</p>
               </div>
@@ -1970,7 +1932,7 @@ useEffect(() => {
                 <div className="flex justify-between pt-2 text-base font-semibold text-[#294B38]"><span>Order total</span><span>₹{orderConfirmation.total}</span></div>
               </div>
             </div>
-            <button onClick={() => { setOrderConfirmation(null); setCheckoutError(""); scrollToShop(); }} className="mt-6 w-full rounded-full bg-[#294B38] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#203B2C]">Continue exploring OorSoru</button>
+            <button onClick={() => { setOrderConfirmation(null); setCheckoutError(""); scrollToShop(); }} className="mt-6 w-full rounded-full bg-[#294B38] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#203B2C]">Continue exploring Kaveri Heritage Foods</button>
           </motion.section>
         </div>
       )}
@@ -1981,7 +1943,7 @@ useEffect(() => {
           <div className="min-h-screen">
             <header className="sticky top-0 z-10 border-b border-[#294B38]/10 bg-[#F8F3E9]/95 backdrop-blur">
               <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
-                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#294B38] text-white"><ShieldCheck size={22}/></span><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B9573C]">OorSoru operations</p><h1 className="font-serif text-2xl">Admin dashboard</h1></div></div>
+                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#294B38] text-white"><ShieldCheck size={22}/></span><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Kaveri Heritage Foods operations</p><h1 className="font-serif text-2xl">Admin dashboard</h1></div></div>
                 <button onClick={() => setAdminOpen(false)} className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-4 py-3 text-sm font-semibold text-white hover:bg-[#203B2C]"><X size={17}/> Back to shop</button>
               </div>
               <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-5 pb-4 sm:px-8">
@@ -2011,7 +1973,7 @@ useEffect(() => {
 
               {adminTab === "Settlements" && <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h3 className="font-serif text-2xl">Maker settlements</h3><p className="mt-1 text-sm text-[#746D60]">Estimated maker payout = order subtotal less the configured commission.</p></div><span className="rounded-full bg-[#F8F3E9] px-3 py-2 text-xs">Commission {commissionRate}%</span></div>{orders.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 p-8 text-center text-sm text-[#746D60]">No settlements until a demo order is placed.</p> : <div className="mt-5 space-y-3">{orders.map((order) => { const fee = Math.round(order.subtotal * commissionRate / 100); const payout = order.subtotal - fee; const status = settlementStatus[order.orderId] || "Pending"; return <article key={order.orderId} className="flex flex-col gap-4 rounded-xl border border-[#294B38]/10 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-semibold">{order.orderId}</p><p className="mt-1 text-xs text-[#746D60]">{order.customerName} · {formatOrderDate(order.createdAt)}</p><p className="mt-2 text-xs text-[#746D60]">Subtotal ₹{order.subtotal.toLocaleString("en-IN")} − commission ₹{fee.toLocaleString("en-IN")}</p></div><div className="sm:text-right"><p className="font-serif text-2xl">₹{payout.toLocaleString("en-IN")}</p><span className={`text-xs font-semibold ${status === "Paid" ? "text-[#47734C]" : "text-[#B9573C]"}`}>{status}</span></div><div className="flex flex-wrap gap-2"><button onClick={() => markSettlement(order.orderId,"Pending")} className="rounded-full border border-[#294B38]/20 px-3 py-2 text-xs">Mark pending</button><button onClick={() => markSettlement(order.orderId,"Paid")} className="rounded-full bg-[#294B38] px-3 py-2 text-xs font-semibold text-white">Mark paid</button></div></article>; })}</div>}<p className="mt-5 text-xs leading-5 text-[#746D60]">Settlement is a local demo status only. No bank transfer, invoice, GST, refund or payment-gateway operation is performed.</p></section>}
 
-              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>OorSoru Admin Workspace · Prototype only</span><button onClick={() => setAdminOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>Kaveri Heritage Foods Admin Workspace · Prototype only</span><button onClick={() => setAdminOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
             </main>
           </div>
         </div>
@@ -2024,7 +1986,7 @@ useEffect(() => {
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#294B38] text-white"><Store size={22} /></span>
-                <div><p className="font-serif text-2xl text-[#294B38]">Maker workspace</p><p className="text-xs text-[#746D60]">OorSoru · Manufacturer demo portal</p></div>
+                <div><p className="font-serif text-2xl text-[#294B38]">Maker workspace</p><p className="text-xs text-[#746D60]">Kaveri Heritage Foods · Manufacturer demo portal</p></div>
               </div>
               <button onClick={() => setManufacturerOpen(false)} className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-4 py-3 text-sm font-medium text-white hover:bg-[#203B2C]"><X size={17} /> Back to shop</button>
             </div>
@@ -2070,8 +2032,27 @@ useEffect(() => {
               {orders.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 px-5 py-10 text-center"><PackageOpen size={28} className="mx-auto text-[#B9573C]"/><p className="mt-3 font-medium text-[#294B38]">No incoming orders yet</p><p className="mt-1 text-sm text-[#746D60]">Place a test order from the shop to see the order queue here.</p></div> : <div className="mt-5 space-y-3">{orders.map((order) => <div key={order.orderId} className="rounded-xl border border-[#294B38]/10 p-4"><div className="flex flex-col justify-between gap-3 md:flex-row md:items-start"><div className="flex items-start gap-3"><input type="checkbox" aria-label={`Select order ${order.orderId} for batch`} checked={selectedBatchOrders.includes(order.orderId)} onChange={(event) => setSelectedBatchOrders((current) => event.target.checked ? [...current, order.orderId] : current.filter((id) => id !== order.orderId))} className="mt-1 h-4 w-4 accent-[#294B38]"/><div><p className="font-semibold text-[#294B38]">{order.orderId}</p><p className="mt-1 text-xs text-[#746D60]">{formatOrderDate(order.createdAt)} · {order.customerName}</p><div className="mt-2 flex flex-wrap gap-2">{order.items.map((item) => <span key={item.name} className="rounded-full bg-[#F8F3E9] px-3 py-1 text-xs text-[#746D60]">{item.name} × {item.quantity}</span>)}</div><p className="mt-2 text-xs text-[#746D60]">Deliver to: {order.address}</p></div></div><div className="flex flex-wrap items-center justify-between gap-3 md:justify-end"><div className="md:text-right"><p className="font-serif text-xl text-[#294B38]">₹{order.total.toLocaleString("en-IN")}</p><span className="mt-1 inline-block rounded-full bg-[#E7C98E]/35 px-3 py-1 text-xs text-[#5D5035]">{order.status}</span></div>{order.status !== "Delivered" && <button onClick={() => updateManufacturerOrder(order.orderId)} className="inline-flex items-center gap-2 rounded-full border border-[#294B38]/20 px-4 py-2.5 text-xs font-semibold text-[#294B38] hover:bg-[#294B38] hover:text-white">Advance status <ArrowRight size={14}/></button>}</div></div></div>)}</div>}
               <p className="mt-5 text-xs leading-5 text-[#746D60]">Demo note: all catalogue items are shown in this sample maker workspace. A real marketplace would restrict this queue to the authenticated maker's own products and orders.</p>
             </section>
-            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>OorSoru Maker Workspace · Prototype only</span><button onClick={() => setManufacturerOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>Kaveri Heritage Foods Maker Workspace · Prototype only</span><button onClick={() => setManufacturerOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
           </div>
+        </div>
+      )}
+
+      {/* Dedicated brand story page */}
+      {storyPageOpen && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#F8F3E9] text-[#292D24]" role="dialog" aria-modal="true" aria-labelledby="kaveri-story-title">
+          <header className="sticky top-0 z-10 border-b border-[#294B38]/10 bg-[#F8F3E9]/95 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+              <div><p className="text-[10px] font-semibold tracking-[0.2em] text-[#B9573C]">KAVERI HERITAGE</p><p className="font-serif text-xl font-bold text-[#294B38]">Our story</p></div>
+              <button type="button" onClick={() => setStoryPageOpen(false)} className="inline-flex items-center gap-2 rounded-full border border-[#294B38]/20 px-4 py-2.5 text-sm font-semibold text-[#294B38] hover:bg-white" aria-label="Close story page"><X size={17}/> Back to shop</button>
+            </div>
+          </header>
+          <section className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1fr_0.9fr] lg:px-12">
+            <div><p className="inline-flex rounded-full border border-[#B9573C]/20 bg-white/60 px-4 py-2 text-xs font-semibold tracking-wide text-[#B9573C]">THANJAVUR, TAMIL NADU · EST. 1987</p><h1 id="kaveri-story-title" className="mt-6 font-serif text-5xl leading-tight text-[#294B38] sm:text-6xl">A home-grown tradition, <span className="italic text-[#B9573C]">made to be shared.</span></h1><p className="mt-6 max-w-2xl text-base leading-8 text-[#746D60]">Kaveri Heritage Foods is presented as a traditional foods and agro enterprise rooted in Thanjavur. Our story is inspired by the familiar warmth of the Tamil home: a welcoming thinnai, a kitchen alive with the aroma of roasted spices, and recipes remembered by watching, tasting and learning from the generations before us.</p><p className="mt-4 max-w-2xl text-base leading-8 text-[#746D60]">The year 1987 marks the heritage story shared for this prototype. The aim is to bring that sense of continuity into a modern food experience—clear product information, careful packing, convenient ordering and a closer connection between the food and the people who prepare it.</p><button type="button" onClick={() => { setStoryPageOpen(false); scrollToShop(); }} className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#294B38] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#203B2C]">Explore the collection <ArrowRight size={17}/></button></div>
+            <div className="relative"><div className="absolute -inset-3 rounded-[2rem] border border-[#B9573C]/25"/><img src="https://d31ajqzatc2qj3.cloudfront.net/xl_22_Thinnai_1_Under_the_warm_glow_of_evening_lights_Shruti_s_traditional_thinnai_invites_peaceful_contemplation_022ecf7df2.webp" alt="Traditional Tamil thinnai verandah with tiled roof and welcoming courtyard" className="relative h-[340px] w-full rounded-[1.7rem] object-cover sm:h-[460px]"/><p className="absolute bottom-4 left-4 rounded-full bg-[#F8F3E9]/90 px-4 py-2 text-xs font-semibold text-[#294B38]">The warmth of a Tamil home</p></div>
+          </section>
+          <section className="border-y border-[#294B38]/10 bg-[#EDE9DC] px-5 py-14 sm:px-8 lg:px-12"><div className="mx-auto max-w-7xl"><p className="text-xs font-semibold tracking-[0.22em] text-[#B9573C]">OUR MANUFACTURER PROFILE</p><h2 className="mt-3 font-serif text-3xl text-[#294B38] sm:text-4xl">Kaveri Heritage Foods</h2><p className="mt-2 text-sm font-semibold text-[#746D60]">Traditional Foods &amp; Agro Enterprise</p><div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[["Location","Thanjavur, Tamil Nadu – 613001"],["Established","1987 · heritage detail supplied for this prototype"],["Product category","Traditional sweets, savories and pickles"],["Entrepreneur name","Kaveri Heritage Foods Co."],["Registration","FSSAI No. 67676767676767 — verify before commercial publication"],["Order availability","Bulk and retail orders · demo status"],["Estimated delivery","1–3 business days; confirm by delivery address"],["Regional roots","South Indian culinary heritage"],["Rating","4.8 / 5.0 · prototype display value"]].map(([label,value]) => <div key={label} className="rounded-2xl border border-[#294B38]/10 bg-white/80 p-5"><p className="text-xs font-medium text-[#746D60]">{label}</p><p className="mt-2 text-sm font-semibold leading-6 text-[#294B38]">{value}</p></div>)}</div></div></section>
+          <section className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-12"><div className="overflow-hidden rounded-3xl bg-white"><img src="https://lalithaskitchen.shop/assets/our-story-BQPbXzFj.jpg" alt="Tamil woman in a sari preparing food in a traditional home kitchen" className="h-72 w-full object-cover sm:h-96"/><div className="p-6"><p className="text-xs font-semibold tracking-[0.2em] text-[#B9573C]">THE HANDS BEHIND THE RECIPES</p><h2 className="mt-3 font-serif text-3xl text-[#294B38]">Tradition is kept by people.</h2><p className="mt-3 text-sm leading-7 text-[#746D60]">Tamil home cooks have long passed down food knowledge through observation, shared work and family gatherings. This maker story celebrates those women and families without claiming that the pictured person is the owner or manufacturer.</p></div></div><div className="flex flex-col justify-center"><p className="text-xs font-semibold tracking-[0.22em] text-[#B9573C]">THE WAY WE THINK ABOUT FOOD</p><h2 className="mt-3 font-serif text-3xl text-[#294B38] sm:text-4xl">Small batches. Thoughtful ingredients. Familiar flavours.</h2><div className="mt-6 space-y-5">{[["Recipes with roots","The featured collection draws on familiar South Indian sweets and savories: Ashoka halwa, murukku, mango pickle, karupatti sweets and more."],["A considered process","The product stories highlight roasting, hand shaping, spice blending and careful packing. Actual ingredients, methods and shelf life should always match the product label."],["Clear information","Every listing should tell customers its weight, ingredients, allergens, storage guidance and estimated dispatch time before they order."],["Care beyond checkout","The demo includes order tracking and manufacturer/admin workspaces so customers can follow an order and the team can manage listings and dispatch status."]].map(([title,body]) => <div key={title} className="border-b border-[#294B38]/10 pb-5"><h3 className="font-serif text-xl text-[#294B38]">{title}</h3><p className="mt-2 text-sm leading-7 text-[#746D60]">{body}</p></div>)}</div></div></section>
+          <section className="bg-[#294B38] px-5 py-12 text-center text-[#F8F3E9] sm:px-8"><p className="text-xs font-semibold tracking-[0.22em] text-[#E7C98E]">KAVERI HERITAGE FOODS</p><h2 className="mx-auto mt-3 max-w-2xl font-serif text-3xl sm:text-4xl">Ancient recipes, modern love.</h2><p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-white/75">Traditional Foods &amp; Agro Enterprise · Thanjavur, Tamil Nadu – 613001</p><div className="mt-7 flex flex-wrap justify-center gap-3"><button type="button" onClick={() => { setStoryPageOpen(false); scrollToShop(); }} className="rounded-full bg-[#E7C98E] px-6 py-3.5 text-sm font-semibold text-[#294B38]">Shop the collection</button><button type="button" onClick={() => setStoryPageOpen(false)} className="rounded-full border border-white/30 px-6 py-3.5 text-sm font-semibold text-white">Return to home</button></div></section>
         </div>
       )}
 

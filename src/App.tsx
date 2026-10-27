@@ -26,6 +26,11 @@ import {
   CreditCard,
   CheckCircle2,
   Trash2,
+  Store,
+  Boxes,
+  IndianRupee,
+  ClipboardList,
+  PackageOpen,
 } from "lucide-react";
 
 type Product = {
@@ -47,6 +52,40 @@ type Product = {
   availability: "Ready to dispatch" | "Made to order" | "Limited batch";
   dispatchEstimate: string;
 };
+
+type OrderStatus = "Order placed" | "Preparing" | "Dispatched" | "Out for delivery" | "Delivered";
+
+type OrderRecord = {
+  orderId: string;
+  items: { name: string; quantity: number; price: number }[];
+  subtotal: number;
+  delivery: number;
+  total: number;
+  customerName: string;
+  address: string;
+  paymentMethod: string;
+  createdAt: string;
+  status: OrderStatus;
+  estimatedDelivery: string;
+};
+
+const orderStatuses: OrderStatus[] = [
+  "Order placed",
+  "Preparing",
+  "Dispatched",
+  "Out for delivery",
+  "Delivered",
+];
+
+function formatOrderDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 const products: Product[] = [
   {
@@ -238,19 +277,147 @@ const [cart, setCart] = useState<Record<number, number>>(() => {
 useEffect(() => {
   localStorage.setItem("oorsoru-cart", JSON.stringify(cart));
 }, [cart]);
+
+  const [orders, setOrders] = useState<OrderRecord[]>(() => {
+    try {
+      const savedOrders = localStorage.getItem("oorsoru-orders");
+      if (!savedOrders) return [];
+      const parsedOrders = JSON.parse(savedOrders) as Partial<OrderRecord>[];
+      if (!Array.isArray(parsedOrders)) return [];
+
+      // Add tracking defaults to orders saved by the previous checkout version.
+      return parsedOrders.map((order) => {
+        const createdAt = order.createdAt || new Date().toISOString();
+        const estimatedDelivery = order.estimatedDelivery ||
+          new Date(new Date(createdAt).getTime() + 5 * 24 * 60 * 60 * 1000).toISOString();
+        return {
+          ...order,
+          createdAt,
+          estimatedDelivery,
+          status: orderStatuses.includes(order.status as OrderStatus)
+            ? (order.status as OrderStatus)
+            : "Order placed",
+        } as OrderRecord;
+      });
+    } catch {
+      return [];
+    }
+  });
+  const [ordersOpen, setOrdersOpen] = useState(false);
+  const [manufacturerOpen, setManufacturerOpen] = useState(false);
+  const [makerStock, setMakerStock] = useState<Record<number, { stock: number; listed: boolean }>>(() => {
+    try {
+      const saved = localStorage.getItem("oorsoru-maker-stock");
+      if (saved) return JSON.parse(saved);
+    } catch { /* use demo defaults */ }
+    return Object.fromEntries(products.map((product) => [product.id, { stock: 12, listed: true }]));
+  });
+  const [productionCapacity, setProductionCapacity] = useState<number>(() => {
+    try { return Number(localStorage.getItem("oorsoru-production-capacity")) || 120; }
+    catch { return 120; }
+  });
+  const [selectedBatchOrders, setSelectedBatchOrders] = useState<string[]>([]);
+  const [batches, setBatches] = useState<{ batchId: string; orderIds: string[]; createdAt: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem("oorsoru-batches");
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [manufacturerNotice, setManufacturerNotice] = useState("");
+
+  // Step 5: admin workspace state. This prototype stores changes in this browser only.
+  type AdminTab = "Overview" | "Manufacturers" | "Products" | "Orders & logistics" | "Settlements";
+  type VerificationStatus = "Pending" | "Verified" | "Rejected";
+  type ApprovalStatus = "Pending" | "Approved" | "Rejected";
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState<AdminTab>("Overview");
+  const [adminNotice, setAdminNotice] = useState("");
+  const [commissionRate, setCommissionRate] = useState<number>(() => {
+    try { return Number(localStorage.getItem("oorsoru-commission-rate")) || 10; }
+    catch { return 10; }
+  });
+  const [manufacturerVerification, setManufacturerVerification] = useState<Record<string, VerificationStatus>>(() => {
+    try {
+      const saved = localStorage.getItem("oorsoru-admin-manufacturers");
+      if (saved) return JSON.parse(saved);
+    } catch { /* use demo defaults */ }
+    return {
+      "Amma's Pantry": "Verified",
+      "Paati's Kitchen": "Pending",
+      "Village Millet Works": "Pending",
+      "Chettinad Home Foods": "Verified",
+    };
+  });
+  const [productApproval, setProductApproval] = useState<Record<number, ApprovalStatus>>(() => {
+    try {
+      const saved = localStorage.getItem("oorsoru-admin-products");
+      if (saved) return JSON.parse(saved);
+    } catch { /* use demo defaults */ }
+    return Object.fromEntries(products.map((product) => [product.id, product.id === 3 ? "Pending" : "Approved"])) as Record<number, ApprovalStatus>;
+  });
+  const [orderExceptions, setOrderExceptions] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem("oorsoru-order-exceptions") || "{}"); }
+    catch { return {}; }
+  });
+  const [settlementStatus, setSettlementStatus] = useState<Record<string, "Pending" | "Paid">>(() => {
+    try { return JSON.parse(localStorage.getItem("oorsoru-settlements") || "{}"); }
+    catch { return {}; }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("oorsoru-admin-manufacturers", JSON.stringify(manufacturerVerification));
+      localStorage.setItem("oorsoru-admin-products", JSON.stringify(productApproval));
+      localStorage.setItem("oorsoru-order-exceptions", JSON.stringify(orderExceptions));
+      localStorage.setItem("oorsoru-settlements", JSON.stringify(settlementStatus));
+      localStorage.setItem("oorsoru-commission-rate", String(commissionRate));
+    } catch (error) { console.error("Could not save admin demo data", error); }
+  }, [manufacturerVerification, productApproval, orderExceptions, settlementStatus, commissionRate]);
+
+  function setVerification(name: string, status: VerificationStatus) {
+    setManufacturerVerification((current) => ({ ...current, [name]: status }));
+    setAdminNotice(`${name} marked ${status.toLowerCase()}.`);
+  }
+
+  function setApproval(productId: number, status: ApprovalStatus) {
+    setProductApproval((current) => ({ ...current, [productId]: status }));
+    setAdminNotice(`Product ${status.toLowerCase()}.`);
+  }
+
+  function toggleOrderException(orderId: string) {
+    setOrderExceptions((current) => ({ ...current, [orderId]: !current[orderId] }));
+    setAdminNotice(`Exception flag updated for ${orderId}.`);
+  }
+
+  function markSettlement(orderId: string, status: "Pending" | "Paid") {
+    setSettlementStatus((current) => ({ ...current, [orderId]: status }));
+    setAdminNotice(`Settlement for ${orderId} marked ${status.toLowerCase()}.`);
+  }
+
+  useEffect(() => {
+    try { localStorage.setItem("oorsoru-maker-stock", JSON.stringify(makerStock)); }
+    catch (error) { console.error("Could not save demo stock", error); }
+  }, [makerStock]);
+  useEffect(() => {
+    try { localStorage.setItem("oorsoru-production-capacity", String(productionCapacity)); }
+    catch (error) { console.error("Could not save production capacity", error); }
+  }, [productionCapacity]);
+  useEffect(() => {
+    try { localStorage.setItem("oorsoru-batches", JSON.stringify(batches)); }
+    catch (error) { console.error("Could not save production batches", error); }
+  }, [batches]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("oorsoru-orders", JSON.stringify(orders));
+    } catch (error) {
+      console.error("Could not save OorSoru order history", error);
+    }
+  }, [orders]);
+
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [orderConfirmation, setOrderConfirmation] = useState<{
-    orderId: string;
-    items: { name: string; quantity: number; price: number }[];
-    subtotal: number;
-    delivery: number;
-    total: number;
-    customerName: string;
-    address: string;
-    paymentMethod: string;
-    createdAt: string;
-  } | null>(null);
+  const [orderConfirmation, setOrderConfirmation] = useState<OrderRecord | null>(null);
   const [deliveryForm, setDeliveryForm] = useState({
     fullName: "",
     phone: "",
@@ -291,6 +458,8 @@ useEffect(() => {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
+      if (makerStock[product.id]?.listed === false) return false;
+      if (productApproval[product.id] !== "Approved") return false;
       const matchesCategory =
         activeCategory === "All" || product.category === activeCategory;
 
@@ -304,7 +473,7 @@ useEffect(() => {
 
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, makerStock, productApproval]);
 
   const cartCount = Object.values(cart).reduce(
     (total, quantity) => total + quantity,
@@ -353,19 +522,87 @@ useEffect(() => {
       address: `${deliveryForm.addressLine.trim()}, ${deliveryForm.city.trim()} - ${deliveryForm.pincode.trim()}`,
       paymentMethod,
       createdAt: new Date().toISOString(),
-    };
+      status: "Order placed" as OrderStatus,
+      estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    } satisfies OrderRecord;
 
-    try {
-      const previousOrders = JSON.parse(localStorage.getItem("oorsoru-orders") || "[]");
-      localStorage.setItem("oorsoru-orders", JSON.stringify([order, ...previousOrders]));
-    } catch {
-      localStorage.setItem("oorsoru-orders", JSON.stringify([order]));
-    }
-
+    setOrders((currentOrders) => [order, ...currentOrders]);
     setOrderConfirmation(order);
     setCart({});
     setCheckoutOpen(false);
     setCartOpen(false);
+  }
+
+  function advanceDemoOrderStatus(orderId: string) {
+    setOrders((currentOrders) => currentOrders.map((order) => {
+      if (order.orderId !== orderId) return order;
+      const currentIndex = orderStatuses.indexOf(order.status);
+      const nextStatus = orderStatuses[Math.min(currentIndex + 1, orderStatuses.length - 1)];
+      return { ...order, status: nextStatus };
+    }));
+  }
+
+  const makerProductSales = orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => {
+    const matchingProduct = products.find((product) => product.name === item.name);
+    return itemSum + (matchingProduct ? item.price * item.quantity : 0);
+  }, 0), 0);
+  const activeOrders = orders.filter((order) => order.status !== "Delivered");
+  const lowStockCount = products.filter((product) => (makerStock[product.id]?.stock ?? 0) <= 5).length;
+
+  function updateStock(productId: number, stock: number) {
+    setMakerStock((current) => ({
+      ...current,
+      [productId]: { ...(current[productId] ?? { listed: true, stock: 0 }), stock: Math.max(0, Math.floor(stock)) },
+    }));
+    setManufacturerNotice("Stock updated and saved in this browser.");
+  }
+
+  function toggleProductListing(productId: number) {
+    setMakerStock((current) => ({
+      ...current,
+      [productId]: {
+        ...(current[productId] ?? { stock: 0, listed: true }),
+        listed: !(current[productId]?.listed ?? true),
+      },
+    }));
+    setManufacturerNotice("Product listing visibility updated.");
+  }
+
+  function updateManufacturerOrder(orderId: string) {
+    const order = orders.find((item) => item.orderId === orderId);
+    if (!order) return;
+    if (order.status === "Order placed") {
+      const required = order.items.map((item) => ({
+        product: products.find((product) => product.name === item.name),
+        quantity: item.quantity,
+      })).filter((item) => item.product);
+      const unavailable = required.find((item) => (makerStock[item.product!.id]?.stock ?? 0) < item.quantity);
+      if (unavailable) {
+        setManufacturerNotice(`Not enough demo stock for ${unavailable.product!.name}. Update stock before accepting this order.`);
+        return;
+      }
+      setMakerStock((current) => {
+        const next = { ...current };
+        required.forEach(({ product, quantity }) => {
+          if (!product) return;
+          next[product.id] = { ...(next[product.id] ?? { listed: true, stock: 0 }), stock: Math.max(0, (next[product.id]?.stock ?? 0) - quantity) };
+        });
+        return next;
+      });
+    }
+    advanceDemoOrderStatus(orderId);
+    setManufacturerNotice(`Order ${orderId} status updated.`);
+  }
+
+  function consolidateSelectedOrders() {
+    if (selectedBatchOrders.length < 2) {
+      setManufacturerNotice("Select at least two incoming orders to consolidate into a batch.");
+      return;
+    }
+    const batchId = `BAT-${Date.now().toString().slice(-6)}`;
+    setBatches((current) => [{ batchId, orderIds: selectedBatchOrders, createdAt: new Date().toISOString() }, ...current]);
+    setSelectedBatchOrders([]);
+    setManufacturerNotice(`Batch ${batchId} created with ${selectedBatchOrders.length} orders. This is a simulated consolidation.`);
   }
 
   function addToCart(productId: number) {
@@ -474,6 +711,38 @@ useEffect(() => {
                   {cartCount}
                 </span>
               )}
+            </button>
+
+            <button
+              aria-label={`Open order history, ${orders.length} orders`}
+              onClick={() => setOrdersOpen(true)}
+              className="relative rounded-full p-3 transition hover:bg-[#294B38]/10"
+              title="Order tracking & history"
+            >
+              <PackageCheck size={19} />
+              {orders.length > 0 && (
+                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#E7C98E] px-1 text-xs text-[#294B38]">
+                  {orders.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              aria-label="Open admin dashboard"
+              onClick={() => { setManufacturerOpen(false); setAdminOpen(true); setAdminNotice(""); }}
+              className="hidden items-center gap-2 rounded-full border border-[#B9573C]/25 px-4 py-2.5 text-sm text-[#B9573C] transition hover:bg-[#B9573C] hover:text-white xl:inline-flex"
+              title="Admin dashboard"
+            >
+              <ShieldCheck size={17} /> Admin
+            </button>
+
+            <button
+              aria-label="Open manufacturer dashboard"
+              onClick={() => { setManufacturerOpen(true); setManufacturerNotice(""); }}
+              className="hidden items-center gap-2 rounded-full border border-[#294B38]/15 px-4 py-2.5 text-sm text-[#294B38] transition hover:bg-[#294B38] hover:text-white lg:inline-flex"
+              title="Manufacturer dashboard"
+            >
+              <Store size={17} /> Maker portal
             </button>
 
             <button
@@ -1547,6 +1816,110 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Order tracking and order history */}
+      {ordersOpen && (
+        <div className="fixed inset-0 z-[65] flex items-start justify-center overflow-y-auto bg-black/45 p-3 backdrop-blur-sm sm:p-6">
+          <motion.section
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="my-4 w-full max-w-3xl overflow-hidden rounded-3xl bg-[#F8F3E9] shadow-2xl sm:my-8"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="orders-title"
+          >
+            <div className="flex items-center justify-between border-b border-[#294B38]/10 px-5 py-5 sm:px-7">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Your OorSoru account</p>
+                <h2 id="orders-title" className="mt-1 font-serif text-2xl text-[#294B38] sm:text-3xl">Order tracking & history</h2>
+                <p className="mt-1 text-sm text-[#746D60]">Your demo orders are saved in this browser.</p>
+              </div>
+              <button onClick={() => setOrdersOpen(false)} aria-label="Close order history" className="rounded-full p-2 transition hover:bg-[#294B38]/10"><X size={21} /></button>
+            </div>
+
+            <div className="max-h-[72vh] space-y-5 overflow-y-auto p-4 sm:p-7">
+              {orders.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#294B38]/20 px-5 py-14 text-center">
+                  <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#DCE4D6] text-[#294B38]"><PackageCheck size={27} /></span>
+                  <h3 className="mt-4 font-serif text-xl text-[#294B38]">No orders yet</h3>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#746D60]">Once you place a demo order, its ID, items, status and estimated delivery will appear here.</p>
+                  <button onClick={() => { setOrdersOpen(false); scrollToShop(); }} className="mt-5 rounded-full bg-[#294B38] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#203B2C]">Explore products</button>
+                </div>
+              ) : (
+                orders.map((order) => {
+                  const statusIndex = orderStatuses.indexOf(order.status);
+                  return (
+                    <article key={order.orderId} className="overflow-hidden rounded-2xl border border-[#294B38]/12 bg-white/55">
+                      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#294B38]/10 p-4 sm:p-5">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.15em] text-[#746D60]">Order ID</p>
+                          <h3 className="mt-1 font-semibold text-[#294B38]">{order.orderId}</h3>
+                          <p className="mt-1 text-xs text-[#746D60]">Placed on {formatOrderDate(order.createdAt)}</p>
+                        </div>
+                        <div className="rounded-full bg-[#DCE4D6] px-3 py-1.5 text-xs font-semibold text-[#294B38]">{order.status}</div>
+                      </div>
+
+                      <div className="p-4 sm:p-5">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="rounded-xl bg-[#F0E9DC] p-3.5">
+                            <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-[#746D60]"><Truck size={14} /> Estimated delivery</p>
+                            <p className="mt-2 font-semibold text-[#294B38]">{order.status === "Delivered" ? "Marked delivered in demo" : formatOrderDate(order.estimatedDelivery)}</p>
+                            <p className="mt-1 text-xs leading-5 text-[#746D60]">Illustrative estimate for this prototype, not live courier tracking.</p>
+                          </div>
+                          <div className="rounded-xl bg-[#F0E9DC] p-3.5">
+                            <p className="text-xs font-medium uppercase tracking-wide text-[#746D60]">Order total</p>
+                            <p className="mt-2 font-serif text-2xl text-[#294B38]">₹{order.total.toLocaleString("en-IN")}</p>
+                            <p className="mt-1 text-xs text-[#746D60]">{order.items.reduce((sum, item) => sum + item.quantity, 0)} item(s) · {order.paymentMethod}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-5">
+                          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.15em] text-[#746D60]">Order progress</p>
+                          <div className="grid grid-cols-5 gap-1">
+                            {orderStatuses.map((status, index) => (
+                              <div key={status} className="min-w-0 text-center">
+                                <div className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${index <= statusIndex ? "bg-[#294B38] text-white" : "border border-[#294B38]/20 bg-white text-[#746D60]"}`}>
+                                  {index < statusIndex ? <Check size={14} /> : index + 1}
+                                </div>
+                                <p className={`mt-2 text-[9px] leading-4 sm:text-[11px] ${index <= statusIndex ? "font-semibold text-[#294B38]" : "text-[#746D60]"}`}>{status}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-5 border-t border-[#294B38]/10 pt-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#746D60]">Purchased products</p>
+                          <div className="mt-2 divide-y divide-[#294B38]/10">
+                            {order.items.map((item) => (
+                              <div key={item.name} className="flex items-start justify-between gap-3 py-2 text-sm">
+                                <span className="text-[#292D24]">{item.name} <span className="text-[#746D60]">× {item.quantity}</span></span>
+                                <span className="shrink-0 font-medium text-[#294B38]">₹{(item.price * item.quantity).toLocaleString("en-IN")}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 flex flex-wrap justify-between gap-2 border-t border-[#294B38]/10 pt-3 text-xs text-[#746D60]">
+                            <span>Deliver to: {order.customerName}, {order.address}</span>
+                            <span>Delivery: {order.delivery === 0 ? "FREE" : `₹${order.delivery}`}</span>
+                          </div>
+                        </div>
+
+                        {order.status !== "Delivered" && (
+                          <button onClick={() => advanceDemoOrderStatus(order.orderId)} className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#294B38]/20 px-4 py-2.5 text-xs font-semibold text-[#294B38] transition hover:bg-[#DCE4D6]">
+                            Advance demo status <ArrowRight size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+            <div className="border-t border-[#294B38]/10 bg-[#EEE6D8] px-5 py-4 text-xs leading-5 text-[#746D60] sm:px-7">
+              Prototype note: order status can be advanced manually for demonstration. No real courier integration or live delivery updates are connected.
+            </div>
+          </motion.section>
+        </div>
+      )}
+
       {/* Demo order confirmation */}
       {orderConfirmation && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/45 p-4 backdrop-blur-sm">
@@ -1573,6 +1946,106 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Admin dashboard — moderation, operations and settlements demo */}
+      {adminOpen && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#F8F3E9] text-[#294B38]">
+          <div className="min-h-screen">
+            <header className="sticky top-0 z-10 border-b border-[#294B38]/10 bg-[#F8F3E9]/95 backdrop-blur">
+              <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
+                <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#294B38] text-white"><ShieldCheck size={22}/></span><div><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B9573C]">OorSoru operations</p><h1 className="font-serif text-2xl">Admin dashboard</h1></div></div>
+                <button onClick={() => setAdminOpen(false)} className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-4 py-3 text-sm font-semibold text-white hover:bg-[#203B2C]"><X size={17}/> Back to shop</button>
+              </div>
+              <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-5 pb-4 sm:px-8">
+                {(["Overview", "Manufacturers", "Products", "Orders & logistics", "Settlements"] as AdminTab[]).map((tab) => <button key={tab} onClick={() => { setAdminTab(tab); setAdminNotice(""); }} className={`shrink-0 rounded-full px-4 py-2.5 text-sm font-medium transition ${adminTab === tab ? "bg-[#294B38] text-white" : "border border-[#294B38]/15 bg-white/60 text-[#294B38] hover:bg-white"}`}>{tab}</button>)}
+              </div>
+            </header>
+
+            <main className="mx-auto max-w-7xl px-5 py-7 sm:px-8 sm:py-10">
+              <div className="mb-7 flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Marketplace control centre</p><h2 className="mt-2 font-serif text-3xl sm:text-4xl">{adminTab}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-[#746D60]">Review makers and listings, handle delivery exceptions, and calculate maker payouts. Actions are saved locally for this prototype.</p></div><span className="rounded-full border border-[#B9573C]/20 bg-white/70 px-3 py-2 text-xs text-[#B9573C]">Demo mode · no real payments</span></div>
+              {adminNotice && <div role="status" className="mb-6 flex items-center gap-2 rounded-xl border border-[#294B38]/15 bg-white p-3 text-sm text-[#294B38]"><Check size={17}/>{adminNotice}</div>}
+
+              {adminTab === "Overview" && <>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {[{label:"Manufacturers awaiting review",value:Object.values(manufacturerVerification).filter((status) => status === "Pending").length,detail:"Identity / business verification",icon:Store},{label:"Products awaiting approval",value:Object.values(productApproval).filter((status) => status === "Pending").length,detail:"Listing moderation queue",icon:ClipboardList},{label:"Orders to monitor",value:orders.filter((order) => order.status !== "Delivered").length,detail:"Not yet delivered",icon:Truck},{label:"Pending settlements",value:orders.filter((order) => settlementStatus[order.orderId] !== "Paid").length,detail:"Demo maker payouts",icon:IndianRupee}].map((card) => <div key={card.label} className="rounded-2xl border border-[#294B38]/10 bg-white p-5"><div className="flex items-center justify-between gap-3"><span className="text-sm text-[#746D60]">{card.label}</span><card.icon size={19} className="text-[#B9573C]"/></div><p className="mt-4 font-serif text-4xl">{card.value}</p><p className="mt-1 text-xs text-[#746D60]">{card.detail}</p></div>)}
+                </div>
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                  <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><h3 className="font-serif text-2xl">Needs attention</h3><div className="mt-4 space-y-3">{Object.entries(manufacturerVerification).filter(([,status]) => status === "Pending").length + Object.values(productApproval).filter((status) => status === "Pending").length + orders.filter((order) => orderExceptions[order.orderId]).length === 0 ? <p className="rounded-xl bg-[#DCE4D6]/60 p-4 text-sm">No pending reviews or flagged orders. You're all caught up.</p> : <>{Object.entries(manufacturerVerification).filter(([,status]) => status === "Pending").map(([name]) => <button key={name} onClick={() => setAdminTab("Manufacturers")} className="flex w-full items-center justify-between rounded-xl bg-[#F8F3E9] p-4 text-left"><span><strong className="block text-sm">{name}</strong><span className="text-xs text-[#746D60]">Manufacturer verification</span></span><span className="text-xs font-semibold text-[#B9573C]">Review →</span></button>)}{products.filter((product) => productApproval[product.id] === "Pending").map((product) => <button key={product.id} onClick={() => setAdminTab("Products")} className="flex w-full items-center justify-between rounded-xl bg-[#F8F3E9] p-4 text-left"><span><strong className="block text-sm">{product.name}</strong><span className="text-xs text-[#746D60]">Product approval</span></span><span className="text-xs font-semibold text-[#B9573C]">Review →</span></button>)}{orders.filter((order) => orderExceptions[order.orderId]).map((order) => <button key={order.orderId} onClick={() => setAdminTab("Orders & logistics")} className="flex w-full items-center justify-between rounded-xl bg-[#F8F3E9] p-4 text-left"><span><strong className="block text-sm">{order.orderId}</strong><span className="text-xs text-[#746D60]">Flagged order exception</span></span><span className="text-xs font-semibold text-[#B9573C]">Inspect →</span></button>)}</>}</div></section>
+                  <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div className="flex items-center justify-between gap-3"><h3 className="font-serif text-2xl">Commission settings</h3><IndianRupee size={20} className="text-[#B9573C]"/></div><p className="mt-2 text-sm leading-6 text-[#746D60]">Choose the marketplace commission rate used for demo settlement calculations.</p><div className="mt-5 flex items-center justify-between"><label htmlFor="admin-commission" className="text-sm">Commission rate</label><strong className="font-serif text-3xl">{commissionRate}%</strong></div><input id="admin-commission" type="range" min="0" max="25" step="0.5" value={commissionRate} onChange={(event) => setCommissionRate(Number(event.target.value))} className="mt-4 w-full accent-[#294B38]"/><div className="mt-2 flex justify-between text-xs text-[#746D60]"><span>0% · No commission</span><span>25% · Upper limit</span></div><div className="mt-5 rounded-xl bg-[#F8F3E9] p-4 text-sm"><div className="flex justify-between gap-3"><span className="text-[#746D60]">Gross order value</span><strong>₹{orders.reduce((sum, order) => sum + order.total, 0).toLocaleString("en-IN")}</strong></div><div className="mt-2 flex justify-between gap-3"><span className="text-[#746D60]">Estimated platform commission</span><strong>₹{Math.round(orders.reduce((sum, order) => sum + order.subtotal, 0) * commissionRate / 100).toLocaleString("en-IN")}</strong></div><p className="mt-3 text-xs leading-5 text-[#746D60]">Illustrative only: actual marketplace fees may need taxes, refunds, shipping rules and maker contracts.</p></div></section>
+                </div>
+              </>}
+
+              {adminTab === "Manufacturers" && <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h3 className="font-serif text-2xl">Manufacturer verification</h3><p className="mt-1 text-sm text-[#746D60]">Review the demo maker records before allowing them to sell.</p></div><span className="rounded-full bg-[#F8F3E9] px-3 py-2 text-xs">{Object.keys(manufacturerVerification).length} maker records</span></div><div className="mt-5 space-y-3">{Object.entries(manufacturerVerification).map(([name,status]) => <article key={name} className="flex flex-col gap-4 rounded-xl border border-[#294B38]/10 p-4 sm:flex-row sm:items-center"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#DCE4D6]"><Store size={21}/></div><div className="min-w-0 flex-1"><p className="font-semibold">{name}</p><p className="mt-1 text-xs text-[#746D60]">Demo record · business documents not connected</p></div><span className={`w-fit rounded-full px-3 py-1.5 text-xs font-semibold ${status === "Verified" ? "bg-[#DCE4D6] text-[#294B38]" : status === "Rejected" ? "bg-[#F4DDD5] text-[#8B3E2C]" : "bg-[#E7C98E]/40 text-[#6B5420]"}`}>{status}</span><div className="flex flex-wrap gap-2"><button onClick={() => setVerification(name,"Verified")} className="rounded-full bg-[#294B38] px-3 py-2 text-xs font-semibold text-white">Verify</button><button onClick={() => setVerification(name,"Pending")} className="rounded-full border border-[#294B38]/20 px-3 py-2 text-xs">Needs review</button><button onClick={() => setVerification(name,"Rejected")} className="rounded-full border border-[#B9573C]/25 px-3 py-2 text-xs text-[#B9573C]">Reject</button></div></article>)}</div><p className="mt-5 text-xs leading-5 text-[#746D60]">Production note: real verification should require authorized staff, document review, audit history and secure server-side permissions.</p></section>}
+
+              {adminTab === "Products" && <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div><h3 className="font-serif text-2xl">Product approvals</h3><p className="mt-1 text-sm text-[#746D60]">Approved products can appear in the customer storefront. Pending and rejected listings stay hidden.</p></div><div className="mt-5 space-y-3">{products.map((product) => { const status = productApproval[product.id] || "Pending"; return <article key={product.id} className="flex flex-col gap-4 rounded-xl border border-[#294B38]/10 p-4 sm:flex-row sm:items-center"><img src={product.image} alt="" className="h-16 w-16 rounded-xl object-cover"/><div className="min-w-0 flex-1"><p className="font-semibold">{product.name}</p><p className="mt-1 text-xs text-[#746D60]">{product.maker} · {product.category} · ₹{product.price}</p><p className="mt-1 text-xs text-[#746D60]">Demo review: product details and food-label compliance must be checked by staff.</p></div><span className={`w-fit rounded-full px-3 py-1.5 text-xs font-semibold ${status === "Approved" ? "bg-[#DCE4D6]" : status === "Rejected" ? "bg-[#F4DDD5] text-[#8B3E2C]" : "bg-[#E7C98E]/40 text-[#6B5420]"}`}>{status}</span><div className="flex flex-wrap gap-2"><button onClick={() => setApproval(product.id,"Approved")} className="rounded-full bg-[#294B38] px-3 py-2 text-xs font-semibold text-white">Approve</button><button onClick={() => setApproval(product.id,"Pending")} className="rounded-full border border-[#294B38]/20 px-3 py-2 text-xs">Pending</button><button onClick={() => setApproval(product.id,"Rejected")} className="rounded-full border border-[#B9573C]/25 px-3 py-2 text-xs text-[#B9573C]">Reject</button></div></article>; })}</div></section>}
+
+              {adminTab === "Orders & logistics" && <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div><h3 className="font-serif text-2xl">Order exceptions & logistics</h3><p className="mt-1 text-sm text-[#746D60]">Advance demo order statuses and flag orders that need manual attention.</p></div>{orders.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 p-10 text-center"><PackageOpen size={28} className="mx-auto text-[#B9573C]"/><p className="mt-3 font-medium">No orders to manage yet</p><p className="mt-1 text-sm text-[#746D60]">Place a demo order from the storefront first.</p></div> : <div className="mt-5 space-y-3">{orders.map((order) => <article key={order.orderId} className="rounded-xl border border-[#294B38]/10 p-4"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><strong>{order.orderId}</strong><span className="rounded-full bg-[#DCE4D6] px-3 py-1 text-xs">{order.status}</span>{orderExceptions[order.orderId] && <span className="rounded-full bg-[#F4DDD5] px-3 py-1 text-xs text-[#8B3E2C]">Exception flagged</span>}</div><p className="mt-2 text-sm">{order.customerName} · ₹{order.total.toLocaleString("en-IN")}</p><p className="mt-1 text-xs text-[#746D60]">{order.address}</p><p className="mt-1 text-xs text-[#746D60]">Courier tracking is simulated; no carrier API is connected.</p></div><div className="flex flex-wrap gap-2">{order.status !== "Delivered" && <button onClick={() => advanceDemoOrderStatus(order.orderId)} className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-3 py-2 text-xs font-semibold text-white">Advance status <ArrowRight size={14}/></button>}<button onClick={() => toggleOrderException(order.orderId)} className={`rounded-full px-3 py-2 text-xs font-semibold ${orderExceptions[order.orderId] ? "bg-[#F4DDD5] text-[#8B3E2C]" : "border border-[#294B38]/20"}`}>{orderExceptions[order.orderId] ? "Clear exception" : "Flag exception"}</button></div></div></article>)}</div>}</section>}
+
+              {adminTab === "Settlements" && <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h3 className="font-serif text-2xl">Maker settlements</h3><p className="mt-1 text-sm text-[#746D60]">Estimated maker payout = order subtotal less the configured commission.</p></div><span className="rounded-full bg-[#F8F3E9] px-3 py-2 text-xs">Commission {commissionRate}%</span></div>{orders.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 p-8 text-center text-sm text-[#746D60]">No settlements until a demo order is placed.</p> : <div className="mt-5 space-y-3">{orders.map((order) => { const fee = Math.round(order.subtotal * commissionRate / 100); const payout = order.subtotal - fee; const status = settlementStatus[order.orderId] || "Pending"; return <article key={order.orderId} className="flex flex-col gap-4 rounded-xl border border-[#294B38]/10 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-semibold">{order.orderId}</p><p className="mt-1 text-xs text-[#746D60]">{order.customerName} · {formatOrderDate(order.createdAt)}</p><p className="mt-2 text-xs text-[#746D60]">Subtotal ₹{order.subtotal.toLocaleString("en-IN")} − commission ₹{fee.toLocaleString("en-IN")}</p></div><div className="sm:text-right"><p className="font-serif text-2xl">₹{payout.toLocaleString("en-IN")}</p><span className={`text-xs font-semibold ${status === "Paid" ? "text-[#47734C]" : "text-[#B9573C]"}`}>{status}</span></div><div className="flex flex-wrap gap-2"><button onClick={() => markSettlement(order.orderId,"Pending")} className="rounded-full border border-[#294B38]/20 px-3 py-2 text-xs">Mark pending</button><button onClick={() => markSettlement(order.orderId,"Paid")} className="rounded-full bg-[#294B38] px-3 py-2 text-xs font-semibold text-white">Mark paid</button></div></article>; })}</div>}<p className="mt-5 text-xs leading-5 text-[#746D60]">Settlement is a local demo status only. No bank transfer, invoice, GST, refund or payment-gateway operation is performed.</p></section>}
+
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>OorSoru Admin Workspace · Prototype only</span><button onClick={() => setAdminOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
+            </main>
+          </div>
+        </div>
+      )}
+
+      {/* Manufacturer dashboard — demo workspace */}
+      {manufacturerOpen && (
+        <div className="fixed inset-0 z-[80] overflow-y-auto bg-[#F8F3E9] text-[#292D24]">
+          <div className="sticky top-0 z-20 border-b border-[#294B38]/10 bg-[#F8F3E9]/95 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#294B38] text-white"><Store size={22} /></span>
+                <div><p className="font-serif text-2xl text-[#294B38]">Maker workspace</p><p className="text-xs text-[#746D60]">OorSoru · Manufacturer demo portal</p></div>
+              </div>
+              <button onClick={() => setManufacturerOpen(false)} className="inline-flex items-center gap-2 rounded-full bg-[#294B38] px-4 py-3 text-sm font-medium text-white hover:bg-[#203B2C]"><X size={17} /> Back to shop</button>
+            </div>
+          </div>
+          <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-10">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#B9573C]">Small-batch operations</p><h1 className="mt-2 font-serif text-4xl text-[#294B38] sm:text-5xl">Your maker dashboard</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#746D60]">Manage sample catalogue visibility, stock, incoming orders and production batches in one place.</p></div>
+              <div className="rounded-2xl border border-[#E7C98E] bg-[#E7C98E]/20 px-4 py-3 text-xs leading-5 text-[#5D5035]">Prototype workspace<br /><strong>Changes are stored in this browser only.</strong></div>
+            </div>
+
+            {manufacturerNotice && <div role="status" className="mt-6 flex items-start gap-2 rounded-xl border border-[#294B38]/15 bg-white px-4 py-3 text-sm text-[#294B38]"><Check size={17} className="mt-0.5 shrink-0" />{manufacturerNotice}<button className="ml-auto" aria-label="Dismiss message" onClick={() => setManufacturerNotice("")}><X size={16} /></button></div>}
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-[#294B38]/10 bg-white p-5"><div className="flex items-center justify-between text-sm text-[#746D60]"><span>Catalogue products</span><Boxes size={19} className="text-[#B9573C]" /></div><p className="mt-4 font-serif text-3xl text-[#294B38]">{products.length}</p><p className="mt-1 text-xs text-[#746D60]">{products.filter((product) => makerStock[product.id]?.listed !== false).length} listed in demo shop</p></div>
+              <div className="rounded-2xl border border-[#294B38]/10 bg-white p-5"><div className="flex items-center justify-between text-sm text-[#746D60]"><span>Incoming orders</span><ClipboardList size={19} className="text-[#B9573C]" /></div><p className="mt-4 font-serif text-3xl text-[#294B38]">{activeOrders.length}</p><p className="mt-1 text-xs text-[#746D60]">{activeOrders.filter((order) => order.status === "Order placed").length} awaiting acceptance</p></div>
+              <div className="rounded-2xl border border-[#294B38]/10 bg-white p-5"><div className="flex items-center justify-between text-sm text-[#746D60]"><span>Low-stock alerts</span><PackageOpen size={19} className="text-[#B9573C]" /></div><p className="mt-4 font-serif text-3xl text-[#294B38]">{lowStockCount}</p><p className="mt-1 text-xs text-[#746D60]">Products with 5 units or fewer</p></div>
+              <div className="rounded-2xl border border-[#294B38]/10 bg-white p-5"><div className="flex items-center justify-between text-sm text-[#746D60]"><span>Estimated product sales</span><IndianRupee size={19} className="text-[#B9573C]" /></div><p className="mt-4 font-serif text-3xl text-[#294B38]">₹{makerProductSales.toLocaleString("en-IN")}</p><p className="mt-1 text-xs text-[#746D60]">Before fees · across demo orders</p></div>
+            </div>
+
+            <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+              <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-serif text-2xl text-[#294B38]">Product & stock management</h2><p className="mt-1 text-sm text-[#746D60]">Update available units or temporarily hide a product.</p></div><span className="rounded-full bg-[#DCE4D6] px-3 py-1.5 text-xs text-[#294B38]">Inventory</span></div>
+                <div className="mt-5 space-y-3">
+                  {products.map((product) => {
+                    const inventory = makerStock[product.id] ?? { stock: 0, listed: true };
+                    return <div key={product.id} className="flex flex-col gap-4 rounded-xl border border-[#294B38]/10 p-4 sm:flex-row sm:items-center">
+                      <img src={product.image} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                      <div className="min-w-0 flex-1"><p className="font-medium text-[#294B38]">{product.name}</p><p className="mt-1 text-xs text-[#746D60]">{product.maker} · ₹{product.price} · {product.category}</p><p className={`mt-1 text-xs ${inventory.stock <= 5 ? "text-[#B9573C]" : "text-[#47734C]"}`}>{inventory.stock <= 5 ? "Low stock" : "In stock"} · {inventory.stock} units</p></div>
+                      <div className="flex flex-wrap items-center gap-2"><label className="text-xs text-[#746D60]">Units <input aria-label={`Stock for ${product.name}`} type="number" min="0" max="9999" value={inventory.stock} onChange={(event) => updateStock(product.id, Number(event.target.value))} className="ml-2 w-20 rounded-lg border border-[#294B38]/20 bg-[#F8F3E9] px-2 py-2 text-sm text-[#294B38]" /></label><button onClick={() => toggleProductListing(product.id)} className={`rounded-full px-3 py-2 text-xs font-medium ${inventory.listed ? "bg-[#DCE4D6] text-[#294B38]" : "bg-[#F4DDD5] text-[#8B3E2C]"}`}>{inventory.listed ? "Listed" : "Hidden"}</button></div>
+                    </div>;
+                  })}
+                </div>
+              </section>
+
+              <div className="space-y-6">
+                <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><div className="flex items-center gap-2"><Clock3 size={19} className="text-[#B9573C]"/><h2 className="font-serif text-2xl text-[#294B38]">Production capacity</h2></div><p className="mt-2 text-sm leading-6 text-[#746D60]">Set the number of product units your operation can prepare in one production cycle.</p><div className="mt-5 flex items-end justify-between gap-4"><label htmlFor="production-capacity" className="text-sm text-[#746D60]">Units per cycle</label><strong className="font-serif text-3xl text-[#294B38]">{productionCapacity}</strong></div><input id="production-capacity" type="range" min="10" max="500" step="10" value={productionCapacity} onChange={(event) => setProductionCapacity(Number(event.target.value))} className="mt-4 w-full accent-[#294B38]"/><div className="mt-2 flex justify-between text-xs text-[#746D60]"><span>10 units</span><span>500 units</span></div><div className="mt-5 rounded-xl bg-[#F8F3E9] p-4 text-sm"><div className="flex justify-between gap-3"><span className="text-[#746D60]">Open orders</span><strong>{activeOrders.length}</strong></div><div className="mt-2 flex justify-between gap-3"><span className="text-[#746D60]">Capacity indicator</span><strong className={activeOrders.length > productionCapacity ? "text-[#B9573C]" : "text-[#294B38]"}>{activeOrders.length > productionCapacity ? "Review capacity" : "Within capacity"}</strong></div></div></section>
+                <section className="rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6"><h2 className="font-serif text-2xl text-[#294B38]">Batch consolidation</h2><p className="mt-2 text-sm leading-6 text-[#746D60]">Select two or more orders to group them into a simulated production batch.</p><button onClick={consolidateSelectedOrders} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#294B38] px-4 py-3 text-sm font-semibold text-white hover:bg-[#203B2C]"><Boxes size={17}/> Consolidate {selectedBatchOrders.length || "selected"} orders</button><div className="mt-4 space-y-2">{batches.length === 0 ? <p className="rounded-xl border border-dashed border-[#294B38]/20 p-4 text-sm text-[#746D60]">No batches created yet.</p> : batches.slice(0, 5).map((batch) => <div key={batch.batchId} className="rounded-xl bg-[#F8F3E9] p-3"><div className="flex justify-between gap-3 text-sm"><strong className="text-[#294B38]">{batch.batchId}</strong><span className="text-xs text-[#746D60]">{batch.orderIds.length} orders</span></div><p className="mt-1 text-xs text-[#746D60]">Created {formatOrderDate(batch.createdAt)}</p></div>)}</div></section>
+              </div>
+            </div>
+
+            <section className="mt-8 rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><h2 className="font-serif text-2xl text-[#294B38]">Incoming orders</h2><p className="mt-1 text-sm text-[#746D60]">Orders placed through the customer checkout appear here.</p></div><span className="text-xs text-[#746D60]">{orders.length} total orders</span></div>
+              {orders.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 px-5 py-10 text-center"><PackageOpen size={28} className="mx-auto text-[#B9573C]"/><p className="mt-3 font-medium text-[#294B38]">No incoming orders yet</p><p className="mt-1 text-sm text-[#746D60]">Place a test order from the shop to see the order queue here.</p></div> : <div className="mt-5 space-y-3">{orders.map((order) => <div key={order.orderId} className="rounded-xl border border-[#294B38]/10 p-4"><div className="flex flex-col justify-between gap-3 md:flex-row md:items-start"><div className="flex items-start gap-3"><input type="checkbox" aria-label={`Select order ${order.orderId} for batch`} checked={selectedBatchOrders.includes(order.orderId)} onChange={(event) => setSelectedBatchOrders((current) => event.target.checked ? [...current, order.orderId] : current.filter((id) => id !== order.orderId))} className="mt-1 h-4 w-4 accent-[#294B38]"/><div><p className="font-semibold text-[#294B38]">{order.orderId}</p><p className="mt-1 text-xs text-[#746D60]">{formatOrderDate(order.createdAt)} · {order.customerName}</p><div className="mt-2 flex flex-wrap gap-2">{order.items.map((item) => <span key={item.name} className="rounded-full bg-[#F8F3E9] px-3 py-1 text-xs text-[#746D60]">{item.name} × {item.quantity}</span>)}</div><p className="mt-2 text-xs text-[#746D60]">Deliver to: {order.address}</p></div></div><div className="flex flex-wrap items-center justify-between gap-3 md:justify-end"><div className="md:text-right"><p className="font-serif text-xl text-[#294B38]">₹{order.total.toLocaleString("en-IN")}</p><span className="mt-1 inline-block rounded-full bg-[#E7C98E]/35 px-3 py-1 text-xs text-[#5D5035]">{order.status}</span></div>{order.status !== "Delivered" && <button onClick={() => updateManufacturerOrder(order.orderId)} className="inline-flex items-center gap-2 rounded-full border border-[#294B38]/20 px-4 py-2.5 text-xs font-semibold text-[#294B38] hover:bg-[#294B38] hover:text-white">Advance status <ArrowRight size={14}/></button>}</div></div></div>)}</div>}
+              <p className="mt-5 text-xs leading-5 text-[#746D60]">Demo note: all catalogue items are shown in this sample maker workspace. A real marketplace would restrict this queue to the authenticated maker's own products and orders.</p>
+            </section>
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#294B38]/10 py-6 text-xs text-[#746D60]"><span>OorSoru Maker Workspace · Prototype only</span><button onClick={() => setManufacturerOpen(false)} className="font-semibold text-[#294B38] underline underline-offset-4">Return to customer storefront</button></div>
+          </div>
+        </div>
+      )}
+
       {/* Back to top */}
       <button
         onClick={() =>
@@ -1586,6 +2059,9 @@ useEffect(() => {
       >
         <ArrowUpRight size={20} className="-rotate-45" />
       </button>
+
+      {!manufacturerOpen && <button onClick={() => { setManufacturerOpen(true); setManufacturerNotice(""); }} className="fixed bottom-20 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-[#294B38]/15 bg-[#F8F3E9] px-4 py-3 text-xs font-semibold text-[#294B38] shadow-lg lg:hidden"><Store size={15}/> Maker portal</button>}
+      {!manufacturerOpen && !adminOpen && <button onClick={() => { setAdminOpen(true); setAdminTab("Overview"); setAdminNotice(""); }} className="fixed bottom-32 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-[#B9573C]/20 bg-[#F8F3E9] px-4 py-3 text-xs font-semibold text-[#B9573C] shadow-lg xl:hidden"><ShieldCheck size={15}/> Admin demo</button>}
 
       {/* Demo status */}
       <div className="fixed bottom-5 left-5 z-30 hidden items-center gap-2 rounded-full border border-[#294B38]/10 bg-white/95 px-3 py-2 text-[10px] text-[#746D60] shadow-md sm:flex">

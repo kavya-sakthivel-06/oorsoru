@@ -1,3 +1,5 @@
+// OorSoru Step 6: connected demo workflow across storefront, maker portal and admin dashboard.
+// Uses shared React state and localStorage; production use requires a secure backend.
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -339,11 +341,24 @@ useEffect(() => {
   const [manufacturerVerification, setManufacturerVerification] = useState<Record<string, VerificationStatus>>(() => {
     try {
       const saved = localStorage.getItem("oorsoru-admin-manufacturers");
-      if (saved) return JSON.parse(saved);
-    } catch { /* use demo defaults */ }
+      const defaults: Record<string, VerificationStatus> = {
+        "Amma's Pantry": "Verified",
+        "Paati's Kitchen": "Verified",
+        "Namma Snacks": "Pending",
+        "The Spice Paati": "Verified",
+        "Anbu Homemade": "Verified",
+        "Village Millet Works": "Pending",
+        "Chettinad Home Foods": "Verified",
+      };
+      // Merge defaults so existing browser data from Step 5 gains the new maker records.
+      return saved ? { ...defaults, ...(JSON.parse(saved) as Record<string, VerificationStatus>) } : defaults;
+    } catch { /* use demo defaults below */ }
     return {
       "Amma's Pantry": "Verified",
-      "Paati's Kitchen": "Pending",
+      "Paati's Kitchen": "Verified",
+      "Namma Snacks": "Pending",
+      "The Spice Paati": "Verified",
+      "Anbu Homemade": "Verified",
       "Village Millet Works": "Pending",
       "Chettinad Home Foods": "Verified",
     };
@@ -351,8 +366,10 @@ useEffect(() => {
   const [productApproval, setProductApproval] = useState<Record<number, ApprovalStatus>>(() => {
     try {
       const saved = localStorage.getItem("oorsoru-admin-products");
-      if (saved) return JSON.parse(saved);
-    } catch { /* use demo defaults */ }
+      const defaults = Object.fromEntries(products.map((product) => [product.id, product.id === 3 ? "Pending" : "Approved"])) as Record<number, ApprovalStatus>;
+      // Preserve admin decisions while adding any product IDs introduced in later steps.
+      return saved ? { ...defaults, ...(JSON.parse(saved) as Record<number, ApprovalStatus>) } : defaults;
+    } catch { /* use demo defaults below */ }
     return Object.fromEntries(products.map((product) => [product.id, product.id === 3 ? "Pending" : "Approved"])) as Record<number, ApprovalStatus>;
   });
   const [orderExceptions, setOrderExceptions] = useState<Record<string, boolean>>(() => {
@@ -460,6 +477,8 @@ useEffect(() => {
     return products.filter((product) => {
       if (makerStock[product.id]?.listed === false) return false;
       if (productApproval[product.id] !== "Approved") return false;
+      // Step 6: customers can only see products from approved listings and verified makers.
+      if (manufacturerVerification[product.maker] !== "Verified") return false;
       const matchesCategory =
         activeCategory === "All" || product.category === activeCategory;
 
@@ -473,7 +492,7 @@ useEffect(() => {
 
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchQuery, makerStock, productApproval]);
+  }, [activeCategory, searchQuery, makerStock, productApproval, manufacturerVerification]);
 
   const cartCount = Object.values(cart).reduce(
     (total, quantity) => total + quantity,
@@ -502,6 +521,16 @@ useEffect(() => {
     }
     if (cartTotal <= 0) {
       setCheckoutError("Your bag is empty. Add a product before checking out.");
+      return;
+    }
+
+    // Revalidate at checkout in case an admin changed approval after an item entered the cart.
+    const blockedCartProduct = products.find((product) =>
+      (cart[product.id] ?? 0) > 0 &&
+      (productApproval[product.id] !== "Approved" || manufacturerVerification[product.maker] !== "Verified" || makerStock[product.id]?.listed === false)
+    );
+    if (blockedCartProduct) {
+      setCheckoutError(`${blockedCartProduct.name} is currently unavailable because its listing or maker approval changed. Remove it from your bag and try again.`);
       return;
     }
 
@@ -2037,7 +2066,7 @@ useEffect(() => {
             </div>
 
             <section className="mt-8 rounded-2xl border border-[#294B38]/10 bg-white p-5 sm:p-6">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><h2 className="font-serif text-2xl text-[#294B38]">Incoming orders</h2><p className="mt-1 text-sm text-[#746D60]">Orders placed through the customer checkout appear here.</p></div><span className="text-xs text-[#746D60]">{orders.length} total orders</span></div>
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><h2 className="font-serif text-2xl text-[#294B38]">Incoming orders</h2><p className="mt-1 text-sm text-[#746D60]">Orders placed through customer checkout appear here. Status changes are shared with customer tracking and the admin logistics queue.</p></div><span className="text-xs text-[#746D60]">{orders.length} total orders</span></div>
               {orders.length === 0 ? <div className="mt-5 rounded-xl border border-dashed border-[#294B38]/20 px-5 py-10 text-center"><PackageOpen size={28} className="mx-auto text-[#B9573C]"/><p className="mt-3 font-medium text-[#294B38]">No incoming orders yet</p><p className="mt-1 text-sm text-[#746D60]">Place a test order from the shop to see the order queue here.</p></div> : <div className="mt-5 space-y-3">{orders.map((order) => <div key={order.orderId} className="rounded-xl border border-[#294B38]/10 p-4"><div className="flex flex-col justify-between gap-3 md:flex-row md:items-start"><div className="flex items-start gap-3"><input type="checkbox" aria-label={`Select order ${order.orderId} for batch`} checked={selectedBatchOrders.includes(order.orderId)} onChange={(event) => setSelectedBatchOrders((current) => event.target.checked ? [...current, order.orderId] : current.filter((id) => id !== order.orderId))} className="mt-1 h-4 w-4 accent-[#294B38]"/><div><p className="font-semibold text-[#294B38]">{order.orderId}</p><p className="mt-1 text-xs text-[#746D60]">{formatOrderDate(order.createdAt)} · {order.customerName}</p><div className="mt-2 flex flex-wrap gap-2">{order.items.map((item) => <span key={item.name} className="rounded-full bg-[#F8F3E9] px-3 py-1 text-xs text-[#746D60]">{item.name} × {item.quantity}</span>)}</div><p className="mt-2 text-xs text-[#746D60]">Deliver to: {order.address}</p></div></div><div className="flex flex-wrap items-center justify-between gap-3 md:justify-end"><div className="md:text-right"><p className="font-serif text-xl text-[#294B38]">₹{order.total.toLocaleString("en-IN")}</p><span className="mt-1 inline-block rounded-full bg-[#E7C98E]/35 px-3 py-1 text-xs text-[#5D5035]">{order.status}</span></div>{order.status !== "Delivered" && <button onClick={() => updateManufacturerOrder(order.orderId)} className="inline-flex items-center gap-2 rounded-full border border-[#294B38]/20 px-4 py-2.5 text-xs font-semibold text-[#294B38] hover:bg-[#294B38] hover:text-white">Advance status <ArrowRight size={14}/></button>}</div></div></div>)}</div>}
               <p className="mt-5 text-xs leading-5 text-[#746D60]">Demo note: all catalogue items are shown in this sample maker workspace. A real marketplace would restrict this queue to the authenticated maker's own products and orders.</p>
             </section>
